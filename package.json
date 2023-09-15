@@ -1,0 +1,32 @@
+{
+  "name": "@axiosleo/webhook-cd",
+  "version": "1.0.0",
+  "description": "",
+  "bin": {
+    "wcd": "./bin/wcd.js"
+  },
+  "scripts": {
+    "start": "node ./index.js",
+    "dev": "nodemon ./index.js",
+    "lint": "eslint src/"
+  },
+  "author": "axiosleo",
+  "license": "MIT",
+  "dependencies": {
+    "@axiosleo/koapp": "^0.4.0",
+    "@axiosleo/orm-mysql": "^0.6.3",
+    "axios": "^0.26.1",
+    "crypto-js": "^4.1.1",
+    "dotenv": "^16.0.3",
+    "moment": "^2.29.1",
+    "uuid": "^9.0.1",
+    "validatorjs": "^3.22.1",
+    "yaml": "^2.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.14",
+    "eslint": "^8.29.0",
+    "nodemon": "^3.0.1",
+    "typescript": "^4.9.4"
+  }
+}
