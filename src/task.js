@@ -70,12 +70,13 @@ const deploy = async () => {
   const envs = Object.keys(process.env).filter((k) => k.indexOf('WEBHOOK_CD_REPO_') === 0);
   envs.forEach((k) => {
     if (k.endsWith('_REPO')) {
-      let [platform, project, repo, branch] = process.env[k].split('::', 4);
+      let [platform, team, project, repo, branch] = process.env[k].split(':', 5);
       k = k.substring(0, k.length - 5);
       let dir = envs.includes(k + '_DIR') ? process.env[k + '_DIR'] : './' + repo;
       const task = {
         workspace,
         platform,
+        team,
         project,
         repo,
         branch,
