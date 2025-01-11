@@ -5,7 +5,7 @@ const path = require('path');
 const { debug } = require('@axiosleo/cli-tool');
 const { _mkdir, _remove, _exists } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
-const { v4: uuidv4 } = require('uuid');
+// const { v4: uuidv4 } = require('uuid');
 const { _merge } = require('./utils');
 
 /**
@@ -15,14 +15,14 @@ const { _merge } = require('./utils');
 async function checkConflict(context) {
   const { task, mrs } = context;
   if (task.platform !== 'coding') {
-    throw new Error('暂时只支持 coding 平台');
+    throw new Error('暂时只支持 coding 平台. 平台: ' + task.platform);
   }
   // const runtimeDir = path.join(__dirname, '../runtime/repos/', `./${uuidv4()}`);
-  const runtimeDir = path.join(__dirname, '../runtime/repos/test');
+  const runtimeDir = path.join(__dirname, task.workspace);
   await _remove(runtimeDir);
   await _mkdir(runtimeDir);
 
-  const link = `git@e.coding.net:keymantech/${task.project}/${task.repo}.git`;
+  const link = `git@e.coding.net:${task.team}/${task.project}/${task.repo}.git`;
 
   await _exec(`git clone ${link}`, runtimeDir);
 
@@ -44,8 +44,6 @@ async function mergeBranches(context) {
   }
 
   await _merge(task.target, projectDir, branch.merged);
-
-  debug.halt(context);
 }
 
 module.exports = {

@@ -1,7 +1,9 @@
 {
-  "ignore": [],
+  "ignore": [
+    "runtime/*"
+  ],
   "watch": [
-    "src",
+    "src/",
     "index.js"
   ],
   "exec": [
