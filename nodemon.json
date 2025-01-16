@@ -1,12 +1,12 @@
 {
   "ignore": [
-    "runtime/*"
+    "**/*.test.ts",
+    "**/__tests__/*"
   ],
   "watch": [
-    "src/",
+    "src",
+    "commands",
     "index.js"
   ],
-  "exec": [
-    "node ./index.js"
-  ]
+  "exec": "node --trace-warnings ./index.js"
 }

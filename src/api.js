@@ -73,7 +73,6 @@ root.add(new Router('/coding/{:team}/{:project}', {
       trigger: 'webhook',
       request: body
     };
-    debug.log(task);
     await sendTask(task);
     success({ event });
   }]

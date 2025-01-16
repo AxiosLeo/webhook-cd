@@ -9,7 +9,8 @@ module.exports = {
     // services dev mode
     {
       name: 'webhook',
-      script: 'nodemon',
+      script: 'node',
+      args: 'index.js',
       env: process.env
     },
   ]
