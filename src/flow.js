@@ -2,17 +2,16 @@
 
 const path = require('path');
 const { debug } = require('@axiosleo/cli-tool');
-const { _read_json, _exists } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _exec, _shell, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const git = require('./git');
 const { printer } = require('@axiosleo/cli-tool');
+const { _exists } = require('@axiosleo/cli-tool/src/helper/fs');
 
 /**
  * 检查是否有分支冲突的情况
  * @param {*} context 
  */
 async function checkConflict(context) {
-  context = await _read_json(path.join(__dirname, '../runtime/context.json'));
   let { platform, task, items } = context;
   if (platform !== 'coding') {
     throw new Error('暂时只支持 coding 平台. 平台: ' + platform);
@@ -34,7 +33,7 @@ async function checkConflict(context) {
   await _shell(`git checkout -b ${tmpBranch}`, cwd, false, false);
 
   let curr = '';
-
+  items = items.filter(i => i.source !== task.target);
   if (!items || !items.length) {
     debug.log('error', '没有需要部署的分支');
     return false;

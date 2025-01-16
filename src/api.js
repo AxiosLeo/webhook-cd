@@ -34,12 +34,22 @@ root.add(new Router('/coding/{:team}/{:project}', {
     const { team, project } = context.params;
     const body = context.body;
     await _write(path.join(__dirname, `../runtime/logs/webhook_${body.event.toLowerCase()}.log`), JSON.stringify(body, null, 2));
-    let event = '';
+    let event = '', source = '', target = '', repo = '';
+    if (body.mergeRequest) {
+      source = body.mergeRequest.head ? body.mergeRequest.head.ref : '';
+      target = body.mergeRequest.base ? body.mergeRequest.base.ref : '';
+      repo = body.mergeRequest.base ? body.mergeRequest.base.repo.name : '';
+    } else {
+      source = body.ref || '';
+      target = body.ref || '';
+      repo = body.repository ? body.repository.name : '';
+    }
     switch (body.event) {
       case 'GIT_MR_CREATED':
         event = 'merge_created';
         break;
       case 'GIT_MR_NOTE':
+      case 'GIT_PUSHED':
       case 'GIT_MR_UPDATED':
         event = 'merge_updated';
         break;
@@ -56,9 +66,9 @@ root.add(new Router('/coding/{:team}/{:project}', {
       team,
       project,
       event,
-      source: mergeRequest.head ? mergeRequest.head.ref : '',
-      target: mergeRequest.base ? mergeRequest.base.ref : '',
-      repo: mergeRequest.base ? mergeRequest.base.repo.name : '',
+      source,
+      target,
+      repo,
       merge_request: mergeRequest,
       trigger: 'webhook',
       request: body
