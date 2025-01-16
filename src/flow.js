@@ -11,34 +11,40 @@ const { _exists } = require('@axiosleo/cli-tool/src/helper/fs');
  * 检查是否有分支冲突的情况
  * @param {*} context 
  */
-async function checkConflict(context) {
+async function reset(context) {
   let { platform, task, items } = context;
   if (platform !== 'coding') {
     throw new Error('暂时只支持 coding 平台. 平台: ' + platform);
   }
   let repo = context.task.repo;
   context.cwd = path.join(context.workspace, `./${repo}`);
-  let tmpBranch, last = task.target, cwd = context.cwd;
-
+  let tmpBranch, cwd = context.cwd;
+  let target = task.target.indexOf('refs/heads/') === -1 ? task.target : task.target.replace('refs/heads/', '');
+  context.target = target;
   try {
-    await git.branch.checkout(task.target, true, cwd);
+    await git.branch.checkout(target, true, cwd);
     tmpBranch = `tmp/commit-${await git.commit.id(cwd)}`;
   } catch (err) {
     debug.log(err);
     return false;
   }
 
-  await git.branch.reset(last, cwd);
+  await git.branch.reset(target, cwd);
   await git.branch.clear(cwd, false);
   await _shell(`git checkout -b ${tmpBranch}`, cwd, false, false);
 
-  let curr = '';
-  items = items.filter(i => i.source !== task.target);
+  items = items.filter(i => i.source !== target);
   if (!items || !items.length) {
     debug.log('error', '没有需要部署的分支');
-    return false;
+    return 'end';
   }
+  context.items = items;
+}
 
+async function merge(context) {
+  let curr = '';
+  let { items, cwd } = context;
+  let last = null;
   try {
     items = items.sort((a, b) => {
       if (a.source === b.source) {
@@ -48,28 +54,38 @@ async function checkConflict(context) {
     });
     await _foreach(items, async (item) => {
       curr = item;
-      printer.warning(`deploy development branch: ${item.source}`);
-      debug.log(`git merge origin/${item.source} -m 'merge: ${item.source}'`);
-      await _exec(`git merge origin/${item.source} -m 'merge: ${item.source}'`, cwd);
+      let source = item.source.indexOf('refs/heads/') === -1 ? item.source : item.source.replace('refs/heads/', '');
+      printer.warning(`deploy development branch: ${source}`);
+      debug.log(`git merge origin/${source} -m 'merge: ${source}'`);
+      await _exec(`git merge origin/${source} -m 'merge: ${source}'`, cwd);
       last = curr;
-      if (!await git.branch.exist(item.source, cwd)) {
+      if (!await git.branch.exist(source, cwd)) {
         return;
       }
     });
   } catch (err) {
-    printer.print('Merge ').yellow(`${items.map(i => i.source).join(' | ')}`).println(' branches failed');
+    if (last === null) {
+      last = items[0];
+    }
+    printer.print('Merge ').yellow(`${items.map(i => i.source).join(' | ')}`).println(' branches failed. last branch: ' + last.source);
     debug.log(err);
     return false;
   }
 }
 
-async function mergeBranches(context) {
+async function deploy(context) {
   if (await _exists(path.join(context.cwd, '.cd.sh'))) {
     await _exec('sh .cd.sh', context.cwd);
   }
 }
 
+async function end() {
+  printer.print('Deploy ').green('success').println('!');
+}
+
 module.exports = {
-  checkConflict,
-  mergeBranches
+  reset,
+  merge,
+  deploy,
+  end
 };
