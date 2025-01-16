@@ -1,48 +1,80 @@
-/* eslint-disable no-unused-vars */
 'use strict';
 
 const path = require('path');
 const { debug } = require('@axiosleo/cli-tool');
-const { _mkdir, _remove, _exists } = require('@axiosleo/cli-tool/src/helper/fs');
-const { _exec } = require('@axiosleo/cli-tool/src/helper/cmd');
-// const { v4: uuidv4 } = require('uuid');
-const { _merge } = require('./utils');
+const { _read_json, _exists } = require('@axiosleo/cli-tool/src/helper/fs');
+const { _exec, _shell, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
+const git = require('./git');
+const { printer } = require('@axiosleo/cli-tool');
 
 /**
  * 检查是否有分支冲突的情况
  * @param {*} context 
  */
 async function checkConflict(context) {
-  const { task, mrs } = context;
-  if (task.platform !== 'coding') {
-    throw new Error('暂时只支持 coding 平台. 平台: ' + task.platform);
+  context = await _read_json(path.join(__dirname, '../runtime/context.json'));
+  let { platform, task, items } = context;
+  if (platform !== 'coding') {
+    throw new Error('暂时只支持 coding 平台. 平台: ' + platform);
   }
-  // const runtimeDir = path.join(__dirname, '../runtime/repos/', `./${uuidv4()}`);
-  const runtimeDir = path.join(__dirname, task.workspace);
-  await _remove(runtimeDir);
-  await _mkdir(runtimeDir);
+  let repo = context.task.repo;
+  context.cwd = path.join(context.workspace, `./${repo}`);
+  let tmpBranch, last = task.target, cwd = context.cwd;
 
-  const link = `git@e.coding.net:${task.team}/${task.project}/${task.repo}.git`;
+  try {
+    await git.branch.checkout(task.target, true, cwd);
+    tmpBranch = `tmp/commit-${await git.commit.id(cwd)}`;
+  } catch (err) {
+    debug.log(err);
+    return false;
+  }
 
-  await _exec(`git clone ${link}`, runtimeDir);
+  await git.branch.reset(last, cwd);
+  await git.branch.clear(cwd, false);
+  await _shell(`git checkout -b ${tmpBranch}`, cwd, false, false);
 
-  const branches = mrs.filter((mr) => mr.target === task.branch)
-    .map((mr) => mr.source);
+  let curr = '';
 
-  // 过滤出可以部署成功的分支以及会部署失败的分支
-  const { merged, failed } = await _merge(task.target, path.join(runtimeDir, task.repo), branches);
+  if (!items || !items.length) {
+    debug.log('error', '没有需要部署的分支');
+    return false;
+  }
 
-  context.branch = { merged, failed };
+  try {
+    items = items.sort((a, b) => {
+      if (a.source === b.source) {
+        return 0;
+      }
+      return a.source > b.source ? 1 : -1;
+    });
+    await _foreach(items, async (item) => {
+      curr = item;
+      printer.warning(`deploy development branch: ${item.source}`);
+      debug.log(`git merge origin/${item.source} -m 'merge: ${item.source}'`);
+      await _exec(`git merge origin/${item.source} -m 'merge: ${item.source}'`, cwd);
+      last = curr;
+      if (!await git.branch.exist(item.source, cwd)) {
+        return;
+      }
+    });
+    if (await _exists(path.join(cwd, '.deploy.sh'))) {
+      await _exec('sh .cd.sh', cwd);
+    }
+  } catch (err) {
+    printer.print('Merge ').yellow(`${items.map(i => i.source).join(' | ')}`).println(' branches failed');
+    debug.log(err);
+    return false;
+  }
 }
 
 async function mergeBranches(context) {
-  const { task, branch } = context;
-  const projectDir = path.join(task.workspace, task.dir);
-  if (!await _exists(projectDir)) {
-    throw new Error('项目目录不存在: ' + projectDir);
-  }
+  // const { task, branch } = context;
+  // const projectDir = path.join(task.workspace, task.dir);
+  // if (!await _exists(projectDir)) {
+  //   throw new Error('项目目录不存在: ' + projectDir);
+  // }
 
-  await _merge(task.target, projectDir, branch.merged);
+  // await _merge(task.target, projectDir, branch.merged);
 }
 
 module.exports = {

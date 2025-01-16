@@ -4,14 +4,9 @@ const config = require('../config');
 const { Connection } = require('rabbitmq-client');
 const { debug } = require('@axiosleo/cli-tool');
 const { _table } = require('./utils');
+const { Workflow } = require('@axiosleo/cli-tool');
+const flow = require('./flow');
 
-/**
- * 
- * @param {import('..').TaskInfo[]} items 
- */
-const deploy = async (items) => {
-
-};
 /**
  * 监听 RabbitMQ 队列
  */
@@ -51,6 +46,7 @@ const consumer = async () => {
         default:
           throw new Error('未知事件: ' + event);
       }
+
       // // 在日志表中插入记录
       await _table('task_logs').insert({
         router: task.router,
@@ -58,6 +54,7 @@ const consumer = async () => {
         trigger: task.trigger,
         request: task.request || {}
       });
+
       // // 在当前分支管理表中插入记录
       await _table('merge_list').keys('uuid', task.uuid).insert({
         uuid: task.uuid,
@@ -74,7 +71,9 @@ const consumer = async () => {
         .where('router', router)
         .where('status', 'wait')
         .select();
-      await deploy(platform, items);
+      const context = { platform, task, items, workspace: config.workspace };
+      const workflow = new Workflow(flow);
+      await workflow.start(context);
     } catch (err) {
       debug.dump(err);
     }

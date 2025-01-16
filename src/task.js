@@ -27,7 +27,7 @@ async function sendTask(task) {
   }
 
   // 生成路由
-  task.router = `${task.platform}@${task.team}@${task.project}@${task.repo}`;
+  task.router = `${task.platform}::${task.team}::${task.project}::${task.repo}::${task.target}`;
   task.uuid = _md5(`${task.platform}@${task.team}@${task.project}@${task.repo}@${task.target}@${task.source}`);
 
   // 发送 rabbitMQ 消息
