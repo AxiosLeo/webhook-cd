@@ -1,18 +1,13 @@
 'use strict';
 
 const { printer } = require('@axiosleo/cli-tool');
-const { createClient } = require('@axiosleo/orm-mysql');
+const { createClient, QueryHandler } = require('@axiosleo/orm-mysql');
 const git = require('./git');
 const { _exec, _shell, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
+const config = require('../config');
 
 const _db = () => {
-  return createClient({
-    host: process.env.MYSQL_HOST || 'localhost',
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASS || 'password',
-    port: Number(process.env.MYSQL_PORT || '23306'),
-    database: process.env.MYSQL_DB || 'webhook'
-  });
+  return createClient(config.mysql);
 };
 
 const gitMerge = async (target, cwd, branchs) => {
@@ -57,7 +52,18 @@ const _merge = async (target, cwd, branchs = []) => {
   };
 };
 
+/**
+ * @param {string} table_name 
+ * @returns {import('@axiosleo/orm-mysql').QueryOperator}
+ */
+function _table(table_name) {
+  const conn = _db();
+  const handle = new QueryHandler(conn);
+  return handle.table(table_name);
+}
+
 module.exports = {
   _db,
-  _merge
+  _merge,
+  _table
 };

@@ -33,7 +33,6 @@ async function checkConflict(context) {
   const { merged, failed } = await _merge(task.target, path.join(runtimeDir, task.repo), branches);
 
   context.branch = { merged, failed };
-
 }
 
 async function mergeBranches(context) {

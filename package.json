@@ -8,17 +8,20 @@
   "scripts": {
     "start": "node ./index.js",
     "dev": "nodemon ./index.js",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "init": "orm-mysql migrate up ./migrations"
   },
   "author": "axiosleo",
   "license": "MIT",
   "dependencies": {
-    "@axiosleo/koapp": "^0.4.0",
-    "@axiosleo/orm-mysql": "^0.6.3",
+    "@axiosleo/cli-tool": "^1.6.5",
+    "@axiosleo/koapp": "^1.0.24",
+    "@axiosleo/orm-mysql": "^0.11.4",
     "axios": "^0.26.1",
     "crypto-js": "^4.1.1",
     "dotenv": "^16.0.3",
     "moment": "^2.29.1",
+    "rabbitmq-client": "^5.0.2",
     "uuid": "^9.0.1",
     "validatorjs": "^3.22.1",
     "yaml": "^2.3.2"

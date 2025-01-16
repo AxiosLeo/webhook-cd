@@ -130,8 +130,6 @@ async function get_commit_date(commit_id, cwd) {
   return res.stdout ? res.stdout.trim() : '';
 }
 
-// reset_branch('master', '/keymantech/factorybi-mobile');
-
 module.exports = {
   path: { root: find_git_root },
   commit: {
