@@ -56,9 +56,6 @@ async function checkConflict(context) {
         return;
       }
     });
-    if (await _exists(path.join(cwd, '.deploy.sh'))) {
-      await _exec('sh .cd.sh', cwd);
-    }
   } catch (err) {
     printer.print('Merge ').yellow(`${items.map(i => i.source).join(' | ')}`).println(' branches failed');
     debug.log(err);
@@ -67,13 +64,9 @@ async function checkConflict(context) {
 }
 
 async function mergeBranches(context) {
-  // const { task, branch } = context;
-  // const projectDir = path.join(task.workspace, task.dir);
-  // if (!await _exists(projectDir)) {
-  //   throw new Error('项目目录不存在: ' + projectDir);
-  // }
-
-  // await _merge(task.target, projectDir, branch.merged);
+  if (await _exists(path.join(context.cwd, '.cd.sh'))) {
+    await _exec('sh .cd.sh', context.cwd);
+  }
 }
 
 module.exports = {
