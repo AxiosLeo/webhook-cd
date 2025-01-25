@@ -9,9 +9,9 @@ module.exports = {
     // services dev mode
     {
       name: 'webhook',
-      script: 'node',
-      args: 'index.js',
-      env: process.env
+      script: 'npm',
+      args: 'run dev',
+      // env: process.env
     },
   ]
 };
