@@ -15,8 +15,8 @@ const startWebApp = async (options) => {
 
 if (require.main === module) {
   process.nextTick(startWebApp, {
-    port: 8800,
-    listen_host: '0.0.0.0',
+    port: process.env.LISTEN_PORT ? parseInt(process.env.LISTEN_PORT) : 8800,
+    listen_host: process.env.LISTEN_HOST || '0.0.0.0',
   });
   process.nextTick(consumer);
 }
