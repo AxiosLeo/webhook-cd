@@ -18,6 +18,7 @@ async function reset(context) {
   }
   let repo = context.task.repo;
   context.cwd = path.join(context.workspace, `./${repo}`);
+  printer.print('CWD: ').yellow(context.cwd).println();
   let tmpBranch, cwd = context.cwd;
   let target = task.target.indexOf('refs/heads/') === -1 ? task.target : task.target.replace('refs/heads/', '');
   context.target = target;
