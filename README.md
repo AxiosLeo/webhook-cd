@@ -45,13 +45,26 @@ The application uses environment variables for its configuration. Create a `.env
 
 - `MYSQL_HOST`: Hostname of your MySQL server (e.g., `localhost` or `webhook-mysql` if using Docker Compose).
 - `MYSQL_PORT`: Port for MySQL (default: `23306` as per `docker-compose.yml`, or `3306` for standard MySQL).
-- `MYSQL_USER`: MySQL username (e.g., `root`).
-- `MYSQL_PASS`: MySQL password (e.g., `3Uh6jScdSJ` as per `docker-compose.yml`).
-- `MYSQL_DB`: MySQL database name (e.g., `webhook` as per `docker-compose.yml`).
+- `MYSQL_USER`: MySQL username (default: `root`).
+- `MYSQL_PASS`: MySQL password (default: `password`).
+- `MYSQL_DB`: MySQL database name (default: `webhook`).
+
+**RabbitMQ Configuration:**
+
+- `RABBITMQ_HOST`: Hostname of your RabbitMQ server (default: `localhost`).
+- `RABBITMQ_PORT`: Port for RabbitMQ (default: `5672`).
+- `RABBITMQ_USER`: RabbitMQ username (default: `guest`).
+- `RABBITMQ_PASS`: RabbitMQ password (default: `guest`).
+
+**Coding.net Configuration:**
+
+- `CODING_USER_TOKEN`: Your Coding.net user token for API access.
+- `CODING_CLIENT_ID`: Your Coding.net OAuth client ID.
+- `CODING_CLIENT_SECRET`: Your Coding.net OAuth client secret.
 
 **Application Configuration:**
 
-- `WEBHOOK_CD_WORKSPACE`: (Optional) The base workspace directory. Defaults to a path relative to the application.
+- `WORKSPACE`: (Optional) The base workspace directory. Defaults to `runtime/repos` relative to the application root.
 - `PORT`: Port for the webhook listener to run on (default: `8800`).
 - `LISTEN_HOST`: Host for the webhook listener (default: `0.0.0.0`).
 
