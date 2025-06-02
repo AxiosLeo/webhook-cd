@@ -63,13 +63,14 @@ async function merge(context) {
         return;
       }
     });
+    context.success = true;
   } catch (err) {
     if (last === null) {
       last = items[0];
     }
     printer.print('Merge ').yellow(`${items.map(i => i.source).join(' | ')}`).println(' branches failed. last branch: ' + last.source);
     debug.log(err);
-    return false;
+    context.success = false;
   }
 }
 
@@ -79,8 +80,12 @@ async function deploy(context) {
   }
 }
 
-async function end() {
-  printer.print('Deploy ').green('success').println('!');
+async function end(context) {
+  if (context.success) {
+    printer.print('Deploy ').green('success').println('!');
+  } else {
+    printer.print('Deploy ').red('failed').println('!');
+  }
 }
 
 module.exports = {
