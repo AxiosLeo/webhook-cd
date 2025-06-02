@@ -6,10 +6,10 @@ Webhook-CD is a tool designed to automate continuous deployment workflows by lis
 
 The system works by:
 
-1.  **Listening for Webhooks**: An HTTP server listens for incoming webhook events from Coding.net, specifically related to merge requests (created, updated, merged, closed).
-2.  **Logging & Task Tracking**: Received webhook data is logged into a MySQL database, and the status of associated tasks (e.g., merge requests) is tracked.
-3.  **Automated Deployments**: Based on repository configurations (defined via environment variables), the tool monitors for deployable events (like a merged merge request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
-4.  **CLI for Manual Control**: A command-line interface (CLI) tool, `wcd`, is provided for manual task inspection and triggering.
+1. **Listening for Webhooks**: An HTTP server listens for incoming webhook events from Coding.net, specifically related to merge requests (created, updated, merged, closed).
+2. **Logging & Task Tracking**: Received webhook data is logged into a MySQL database, and the status of associated tasks (e.g., merge requests) is tracked.
+3. **Automated Deployments**: Based on repository configurations (defined via environment variables), the tool monitors for deployable events (like a merged merge request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
+4. **CLI for Manual Control**: A command-line interface (CLI) tool, `wcd`, is provided for manual task inspection and triggering.
 
 ## Features
 
@@ -107,26 +107,26 @@ npm run dev
 
 For each project in Coding.net that you want to integrate:
 
-1.  Go to your project settings in Coding.net.
-2.  Find the "Webhooks" section.
-3.  Add a new webhook with the following details:
-    - **Payload URL**: `http://<your_server_address>:<PORT>/{platform}/{project}`
-      - Replace `<your_server_address>` with the IP or hostname where Webhook-CD is running.
-      - Replace `<PORT>` with the port Webhook-CD is listening on (e.g., `8800`).
-      - Replace `{platform}` and `{project}` with the actual platform identifier (e.g., `coding`) and your project name as used in your environment variable configurations.
-    - **Content type**: `application/json`
-    - **Secret Token**: (Optional but recommended) If you set a secret token, you will need to modify the application to validate it. The current `index.js` primarily checks the `User-Agent`.
-    - **Events**: Select the events you want to trigger the webhook. This tool is primarily designed for "Merge Request" events (Push, Opened, Merged, Closed, Commented).
-    - Ensure the webhook is active.
+1. Go to your project settings in Coding.net.
+2. Find the "Webhooks" section.
+3. Add a new webhook with the following details:
+   - **Payload URL**: `http://<your_server_address>:<PORT>/{platform}/{project}`
+     - Replace `<your_server_address>` with the IP or hostname where Webhook-CD is running.
+     - Replace `<PORT>` with the port Webhook-CD is listening on (e.g., `8800`).
+     - Replace `{platform}` and `{project}` with the actual platform identifier (e.g., `coding`) and your project name as used in your environment variable configurations.
+   - **Content type**: `application/json`
+   - **Secret Token**: (Optional but recommended) If you set a secret token, you will need to modify the application to validate it. The current `index.js` primarily checks the `User-Agent`.
+   - **Events**: Select the events you want to trigger the webhook. This tool is primarily designed for "Merge Request" events (Push, Opened, Merged, Closed, Commented).
+   - Ensure the webhook is active.
 
 **Important**: The application currently authenticates webhooks by checking if the `User-Agent` header is `Coding.net Hook`.
 
 ### 2. How Deployments Work
 
-1.  When a configured event (e.g., a merge request is merged) occurs in Coding.net for a monitored repository and branch (as defined in your `WEBHOOK_CD_REPO_...` environment variables), Coding.net sends a webhook to your Webhook-CD instance.
-2.  Webhook-CD logs the event and updates the status in its database.
-3.  The `runTasks` process in `index.js` periodically checks for new, undeployed events for the configured repositories.
-4.  If a deployable event is found, Webhook-CD will attempt to perform Git operations (like `git checkout`, `git reset --hard origin/{branch}`, `git pull`) in the corresponding local directory specified by `WEBHOOK_CD_REPO_..._DIR`. Ensure this directory exists and is properly initialized as a Git repository, or is a location where the tool can clone into.
+1. When a configured event (e.g., a merge request is merged) occurs in Coding.net for a monitored repository and branch (as defined in your `WEBHOOK_CD_REPO_...` environment variables), Coding.net sends a webhook to your Webhook-CD instance.
+2. Webhook-CD logs the event and updates the status in its database.
+3. The `runTasks` process in `index.js` periodically checks for new, undeployed events for the configured repositories.
+4. If a deployable event is found, Webhook-CD will attempt to perform Git operations (like `git checkout`, `git reset --hard origin/{branch}`, `git pull`) in the corresponding local directory specified by `WEBHOOK_CD_REPO_..._DIR`. Ensure this directory exists and is properly initialized as a Git repository, or is a location where the tool can clone into.
 
 ## CLI Tool (`wcd`)
 
