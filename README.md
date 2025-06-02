@@ -8,7 +8,7 @@ The system works by:
 
 1. **Listening for Webhooks**: An HTTP server listens for incoming webhook events from Coding.net, specifically related to merge requests (created, updated, merged, closed).
 2. **Logging & Task Tracking**: Received webhook data is logged into a MySQL database, and the status of associated tasks (e.g., merge requests) is tracked.
-3. **Automated Deployments**: Based on repository configurations (defined via environment variables), the tool monitors for deployable events (like a merged merge request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
+3. **Automated Deployments**: Based on repository configurations, the tool monitors for deployable events (like a merged merge request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
 4. **CLI for Manual Control**: A command-line interface (CLI) tool, `wcd`, is provided for manual task inspection and triggering.
 
 ## Features
@@ -68,16 +68,6 @@ The application uses environment variables for its configuration. Create a `.env
 - `PORT`: Port for the webhook listener to run on (default: `8800`).
 - `LISTEN_HOST`: Host for the webhook listener (default: `0.0.0.0`).
 
-**Repository Deployment Configuration:**
-For each repository and branch you want to manage for automated deployments, define the following environment variables:
-
-- `WEBHOOK_CD_REPO_{PLATFORM}_{PROJECT}_{REPO}_{BRANCH}`: Specifies the repository and branch to monitor.
-  - Example: `WEBHOOK_CD_REPO_coding_myteam_mywebapp_master=coding::myteam::mywebapp::master`
-  - The value format is `{platform}::{project}::{repo_name}::{branch_name}`.
-- `WEBHOOK_CD_REPO_{PLATFORM}_{PROJECT}_{REPO}_DIR`: Specifies the local directory path where the Git operations for this repository should be performed.
-  - Example: `WEBHOOK_CD_REPO_coding_myteam_mywebapp_DIR=/path/to/mywebapp/deployment`
-  - If this is not set, it defaults to the repository name. This directory should be an existing Git repository, or a directory where the repository can be cloned and managed by this tool.
-
 ### 3. Start Services (Docker)
 
 The easiest way to get MySQL and Redis running is via Docker Compose:
@@ -123,10 +113,10 @@ For each project in Coding.net that you want to integrate:
 
 ### 2. How Deployments Work
 
-1. When a configured event (e.g., a merge request is merged) occurs in Coding.net for a monitored repository and branch (as defined in your `WEBHOOK_CD_REPO_...` environment variables), Coding.net sends a webhook to your Webhook-CD instance.
+1. When a configured event (e.g., a merge request is merged) occurs in Coding.net for a monitored repository and branch, Coding.net sends a webhook to your Webhook-CD instance.
 2. Webhook-CD logs the event and updates the status in its database.
 3. The `runTasks` process in `index.js` periodically checks for new, undeployed events for the configured repositories.
-4. If a deployable event is found, Webhook-CD will attempt to perform Git operations (like `git checkout`, `git reset --hard origin/{branch}`, `git pull`) in the corresponding local directory specified by `WEBHOOK_CD_REPO_..._DIR`. Ensure this directory exists and is properly initialized as a Git repository, or is a location where the tool can clone into.
+4. If a deployable event is found, Webhook-CD will attempt to perform Git operations (like `git checkout`, `git reset --hard origin/{branch}`, `git pull`) in the corresponding local directory. Ensure this directory exists and is properly initialized as a Git repository, or is a location where the tool can clone into.
 
 ## CLI Tool (`wcd`)
 
