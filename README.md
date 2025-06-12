@@ -100,10 +100,10 @@ For each project in Coding.net that you want to integrate:
 1. Go to your project settings in Coding.net.
 2. Find the "Webhooks" section.
 3. Add a new webhook with the following details:
-   - **Payload URL**: `http://<your_server_address>:<PORT>/{platform}/{project}`
+   - **Payload URL**: `http://<your_server_address>:<PORT>/{platform}/{team}/{project}`
      - Replace `<your_server_address>` with the IP or hostname where Webhook-CD is running.
      - Replace `<PORT>` with the port Webhook-CD is listening on (e.g., `8800`).
-     - Replace `{platform}` and `{project}` with the actual platform identifier (e.g., `coding`) and your project name as used in your environment variable configurations.
+     - Replace `{platform}`, `{team}`, and `{project}` with the actual platform identifier (e.g., `coding`), your team name, and your project name respectively.
    - **Content type**: `application/json`
    - **Secret Token**: (Optional but recommended) If you set a secret token, you will need to modify the application to validate it. The current `index.js` primarily checks the `User-Agent`.
    - **Events**: Select the events you want to trigger the webhook. This tool is primarily designed for "Merge Request" events (Push, Opened, Merged, Closed, Commented).
