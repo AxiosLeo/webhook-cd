@@ -22,7 +22,8 @@ module.exports = {
     database: process.env.MYSQL_DB || 'webhook'
   },
   coding: {
-    user_token: process.env.CODING_USER_TOKEN || '',
+    username: process.env.CODING_USERNAME || '',
+    user_token: process.env.CODING_USERTOKEN || '',
     client_id: process.env.CODING_CLIENT_ID || '',
     client_secret: process.env.CODING_CLIENT_SECRET || '',
   }

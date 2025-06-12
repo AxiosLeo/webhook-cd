@@ -6,6 +6,7 @@ const { _exec, _shell, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd')
 const git = require('./git');
 const { printer } = require('@axiosleo/cli-tool');
 const { _exists } = require('@axiosleo/cli-tool/src/helper/fs');
+const config = require('../config');
 
 /**
  * 检查是否有分支冲突的情况
@@ -19,6 +20,11 @@ async function reset(context) {
   let repo = context.task.repo;
   context.cwd = path.join(context.workspace, `./${repo}`);
   printer.print('CWD: ').yellow(context.cwd).println();
+  // 如果仓库目录不存在，则克隆仓库
+  if (!await _exists(context.cwd)) {
+    let httpsLink = `https://${config.coding.username}:${config.coding.user_token}@e.coding.net/${task.team}/${task.project}/${task.repo}.git`;
+    await _exec(`git clone ${httpsLink} ${context.cwd}`, context.workspace);
+  }
   let tmpBranch, cwd = context.cwd;
   let target = task.target.indexOf('refs/heads/') === -1 ? task.target : task.target.replace('refs/heads/', '');
   context.target = target;
