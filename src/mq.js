@@ -6,22 +6,26 @@ const { debug } = require('@axiosleo/cli-tool');
 const { _table } = require('./utils');
 const { Workflow } = require('@axiosleo/cli-tool');
 const flow = require('./flow');
+const { printer } = require('@axiosleo/cli-tool');
+
+let rabbit = null;
+let sub = null;
 
 /**
  * 监听 RabbitMQ 队列
  */
 const consumer = async () => {
   const c = config.rabbit;
-  const rabbit = new Connection(`amqp://${c.user}:${c.pass}@${c.host}:${c.port}`);
+  rabbit = new Connection(`amqp://${c.user}:${c.pass}@${c.host}:${c.port}`);
 
   rabbit.on('error', (err) => {
-    debug.log('RabbitMQ connection error', err);
+    printer.warning('RabbitMQ connection error', err);
   });
   rabbit.on('connection', () => {
-    debug.log('Connection successfully (re)established');
+    printer.warning('RabbiMQ connection successfully');
   });
 
-  const sub = rabbit.createConsumer({
+  sub = rabbit.createConsumer({
     queue: c.topic,
     queueOptions: { durable: true },
     // handle 2 messages at a time
@@ -83,14 +87,11 @@ const consumer = async () => {
     // message could be acknowledged.
     debug.log('consumer error (user-events)', err);
   });
-
-  const onShutdown = async () => {
-    await sub.close();
-    await rabbit.close();
-  };
-
-  process.on('SIGINT', onShutdown);
-  process.on('SIGTERM', onShutdown);
 };
 
-module.exports = { consumer };
+const onShutdown = async () => {
+  await sub.close();
+  await rabbit.close();
+};
+
+module.exports = { consumer, onShutdown };
