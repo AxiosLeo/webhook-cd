@@ -5,26 +5,93 @@ const { debug } = require('@axiosleo/cli-tool');
 const { _exec, _shell, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const git = require('./git');
 const { printer } = require('@axiosleo/cli-tool');
-const { _exists } = require('@axiosleo/cli-tool/src/helper/fs');
-const config = require('../config');
+const { _exists, _mkdir } = require('@axiosleo/cli-tool/src/helper/fs');
+const { _yaml } = require('./utils');
+const is = require('@axiosleo/cli-tool/src/helper/is');
+
+const platforms = ['coding'];
+
+/**
+ * 通配符匹配函数
+ * @param {string} pattern - 模式字符串，支持 * 通配符
+ * @param {string} str - 要匹配的字符串
+ * @returns {boolean} 是否匹配
+ */
+function wildcardMatch(pattern, str) {
+  // 将通配符模式转换为正则表达式
+  const regexPattern = pattern
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // 转义特殊字符
+    .replace(/\\\*/g, '.*'); // 将 \* 替换为 .*
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(str);
+}
+
+/**
+ * 判断分支是否匹配分支模式列表
+ * @param {string} branchName - 分支名称
+ * @param {string[]} patterns - 分支模式列表
+ * @returns {boolean} 是否匹配
+ */
+function matchesBranchPatterns(branchName, patterns) {
+  if (!patterns || !Array.isArray(patterns)) {
+    return false;
+  }
+
+  // 移除 refs/heads/ 前缀（如果存在）
+  const cleanBranchName = branchName.replace(/^refs\/heads\//, '');
+
+  return patterns.some(pattern => wildcardMatch(pattern, cleanBranchName));
+}
+
+/**
+ * @typedef {Object} Task
+ * @property {string} team - 团队名称
+ * @property {string} project - 项目名称  
+ * @property {string} repo - 仓库名称
+ * @property {string} target - 目标分支
+ */
+
+/**
+ * @typedef {Object} PlatformHandler
+ * @property {function(Task): string} getCloneLink - 获取仓库克隆链接
+ * @property {function(Task): Promise<string>} getDefaultBranch - 获取默认分支
+ */
 
 /**
  * 检查是否有分支冲突的情况
  * @param {*} context 
  */
 async function reset(context) {
-  let { platform, task, items } = context;
-  if (platform !== 'coding') {
-    throw new Error('暂时只支持 coding 平台. 平台: ' + platform);
+  let { platform, task } = context;
+  if (!platforms.includes(platform)) {
+    throw new Error('不支持的平台: ' + platform);
   }
+  const PlatformHandlerClass = require(`./platform/${platform}`);
+  /** @type {PlatformHandler} */
+  const platformHandler = new PlatformHandlerClass();
+  let defaultBranch = await platformHandler.getDefaultBranch(task);
+  defaultBranch = `refs/heads/${defaultBranch}`;
+  if (task.target !== defaultBranch) {
+    printer.print('目标分支: ').yellow(task.target).println(' 不是默认分支: ' + defaultBranch);
+    return;
+  }
+
   let repo = context.task.repo;
+  if (!await _exists(context.workspace)) {
+    await _mkdir(context.workspace);
+  }
   context.cwd = path.join(context.workspace, `./${repo}`);
   printer.print('CWD: ').yellow(context.cwd).println();
+
   // 如果仓库目录不存在，则克隆仓库
   if (!await _exists(context.cwd)) {
-    let httpsLink = `https://${config.coding.username}:${config.coding.user_token}@e.coding.net/${task.team}/${task.project}/${task.repo}.git`;
+    let httpsLink = platformHandler.getCloneLink(task);
     await _exec(`git clone ${httpsLink} ${context.cwd}`, context.workspace);
+  } else {
+    await git.branch.reset(task.target, context.cwd);
   }
+
   let tmpBranch, cwd = context.cwd;
   let target = task.target.indexOf('refs/heads/') === -1 ? task.target : task.target.replace('refs/heads/', '');
   context.target = target;
@@ -39,13 +106,49 @@ async function reset(context) {
   await git.branch.reset(target, cwd);
   await git.branch.clear(cwd, false);
   await _shell(`git checkout -b ${tmpBranch}`, cwd, false, false);
+}
 
-  items = items.filter(i => i.source !== target);
+async function readConfig(context) {
+  const ymlConfigFile = path.join(context.cwd, '.cd.yml');
+  if (!await _exists(ymlConfigFile)) {
+    printer.warning('没有找到 .cd.yml 文件，请检查文件是否存在');
+    return;
+  }
+  const ymlConfig = await _yaml(ymlConfigFile);
+  printer.print('读取到配置: ').green(ymlConfig.name || '未命名').println();
+
+  // 这里可以根据配置执行部署逻辑
+  context.deployConfig = ymlConfig;
+  debug.log(context.items);
+  const items = context.items.filter(i => {
+    if (i.source === i.target) {
+      return false;
+    }
+    if (i.source === `refs/heads/${context.target}`) {
+      return false;
+    }
+
+    // 检查分支是否匹配配置的分支模式
+    if (context.deployConfig.on && context.deployConfig.on.branches) {
+      const isIncluded = matchesBranchPatterns(i.source, context.deployConfig.on.branches);
+
+      // 检查是否在排除列表中
+      if (context.deployConfig.on.exclude_branches) {
+        const isExcluded = matchesBranchPatterns(i.source, context.deployConfig.on.exclude_branches);
+        return isIncluded && !isExcluded;
+      }
+
+      return isIncluded;
+    }
+
+    // 如果没有配置分支规则，默认包含所有分支（除了目标分支）
+    return true;
+  });
+  context.items = items;
   if (!items || !items.length) {
     debug.log('error', '没有需要部署的分支');
     return 'end';
   }
-  context.items = items;
 }
 
 async function merge(context) {
@@ -81,9 +184,69 @@ async function merge(context) {
   }
 }
 
+async function execSteps(label, scripts, context) {
+  if (!scripts) {
+    return;
+  }
+  printer.yellow(label + ': ').println();
+  try {
+    await _foreach(scripts, async (script) => {
+      if (is.string(script)) {
+        await _exec(script, context.cwd);
+      } else if (is.array(script)) {
+        await _foreach(script, async (line) => {
+          printer.yellow(line.name + ': ').println();
+          await _exec(line.run, context.cwd);
+        });
+      } else {
+        printer.print('不支持的脚本类型: ').red(script).println();
+        return false;
+      }
+    });
+    return true;
+  } catch (err) {
+    printer.print('执行 ' + label + ' 脚本失败: ').red(err.message).println();
+    return false;
+  }
+}
+
 async function deploy(context) {
-  if (await _exists(path.join(context.cwd, '.cd.sh'))) {
-    await _exec('sh .cd.sh', context.cwd);
+  try {
+    // 合并代码后，再读一次 .cd.yml 文件，避免配置文件被修改
+    const ymlConfigFile = path.join(context.cwd, '.cd.yml');
+    if (!await _exists(ymlConfigFile)) {
+      printer.warning('没有找到 .cd.yml 文件，可能已被删除，请检查文件是否存在');
+      return;
+    }
+    context.deployConfig = await _yaml(ymlConfigFile);
+    if (!context.deployConfig) {
+      return;
+    }
+    const deployConfig = context.deployConfig;
+    const { pre_deploy, post_deploy, cleanup } = deployConfig.scripts || {};
+    const deploy = deployConfig.deploy || {};
+    const steps = deploy || [];
+    if (!await execSteps('执行预部署脚本', pre_deploy, context)) {
+      context.success = false;
+      return 'end';
+    }
+    if (!await execSteps('执行部署脚本', steps, context)) {
+      context.success = false;
+      return 'end';
+    }
+    if (!await execSteps('执行后部署脚本', post_deploy, context)) {
+      context.success = false;
+      return 'end';
+    }
+    if (!await execSteps('执行清理脚本', cleanup, context)) {
+      context.success = false;
+      return 'end';
+    }
+  } catch (error) {
+    debug.log(error);
+    context.success = false;
+    context.error = error;
+    return 'end';
   }
 }
 
@@ -97,6 +260,7 @@ async function end(context) {
 
 module.exports = {
   reset,
+  readConfig,
   merge,
   deploy,
   end
