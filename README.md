@@ -1,5 +1,15 @@
 # Webhook-CD: Continuous Deployment via Webhooks for Coding.net
 
+> **⚠️ 重要警告 / IMPORTANT WARNING**
+>
+> **🚫 本工具严禁在生产环境中使用！仅限开发环境使用！**
+>
+> **🚫 DO NOT USE THIS TOOL IN PRODUCTION ENVIRONMENTS! DEVELOPMENT USE ONLY!**
+>
+> 此工具为开发阶段的自动化部署工具，未经过生产环境的安全性和稳定性验证。在生产环境中使用可能导致数据丢失、服务中断或安全风险。
+>
+> This tool is designed for development automation and has not been validated for production security and stability. Using it in production may result in data loss, service interruption, or security risks.
+
 Webhook-CD is a tool designed to automate continuous deployment workflows by listening to webhooks, primarily from Coding.net. It processes Git merge request events to trigger deployment actions on configured repositories.
 
 ## Overview
