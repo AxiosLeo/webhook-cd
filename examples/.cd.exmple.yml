@@ -20,7 +20,7 @@ on:
     - release/*
     - dev/*
 
-  # 排除分支 - 这些分支不会触发部署
+  # 排除分支 - 这些分支不会触发部署, exclude_branches 优先级高于 branches
   exclude_branches:
     - feature/*
     - hotfix/*
@@ -34,14 +34,15 @@ deploy:
   steps:
     - name: 代码检查
       run: |
-        npm run lint
+        # 如果有代码检查步骤，在这里添加
+        echo "检查完成"
 
     - name: 构建项目
       run: |
         # 如果有构建步骤，在这里添加
         echo "构建完成"
 
-# 自定义脚本
+# 自定义脚本, 非必须
 scripts:
   # 部署前执行
   pre_deploy:
@@ -55,10 +56,9 @@ scripts:
     - echo "部署完成，执行后续任务..."
     - pm2 status
     - df -h
-    - free -m
 
   # 清理脚本
   cleanup:
     - echo "执行清理任务..."
-    - docker system prune -f
-    - npm cache clean --force
+    # - docker system prune -f
+    # - npm cache clean --force
