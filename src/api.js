@@ -76,7 +76,6 @@ root.post('/coding/{:team}/{:project}', async (context) => {
     rules: {
       team: 'required|string',
       project: 'required|string',
-      base_branch: 'required|string',
     }
   }
 });
