@@ -1,10 +1,12 @@
 'use strict';
 
+const yaml = require('yaml');
 const { printer } = require('@axiosleo/cli-tool');
 const { createClient, QueryHandler } = require('@axiosleo/orm-mysql');
 const git = require('./git');
 const { _exec, _shell, _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const config = require('../config');
+const { _read, _exists } = require('@axiosleo/cli-tool/src/helper/fs');
 
 const _db = () => {
   return createClient(config.mysql);
@@ -62,8 +64,17 @@ function _table(table_name) {
   return handle.table(table_name);
 }
 
+async function _yaml(file) {
+  if (await _exists(file)) {
+    const content = await _read(file);
+    return yaml.parse(content);
+  }
+  return null;
+}
+
 module.exports = {
   _db,
+  _yaml,
   _merge,
   _table
 };
