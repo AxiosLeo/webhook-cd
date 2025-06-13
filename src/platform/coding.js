@@ -18,6 +18,21 @@ class CodingPlatform {
     });
     return res.Response.BranchName;
   }
+
+  async getMergeRequest(task) {
+    let res = await this.coding.request('DescribeDepotMergeRequests', {
+      DepotPath: `${task.team}/${task.project}/${task.repo}`,
+      PageSize: 100
+    });
+    const items = res.Response.Data.List;
+    return items.map((item) => {
+      return {
+        source: item.SourceBranch,
+        target: item.TargetBranch,
+        title: item.Title,
+      };
+    });
+  }
 }
 
 module.exports = CodingPlatform;
