@@ -14,7 +14,9 @@ const auth = async (context) => {
   }
 };
 
-const root = new Router('');
+const root = new Router('', {
+  middlewares: [auth]
+});
 
 root.new('/***', {
   method: 'any',
@@ -24,58 +26,59 @@ root.new('/***', {
   }]
 });
 
-// https://lark-apps.leadmapcloud.com/webhook/coding/<team>/<project>
-// https://lark-apps.leadmapcloud.com/webhook/coding/g-jyts9813/lark-apps
-// https://e.coding.net/open-api/?action=DescribeEvents
-root.add(new Router('/coding/{:team}/{:project}', {
-  method: 'post',
-  middlewares: [auth],
-  handlers: [async (context) => {
-    const { team, project } = context.params;
-    const body = context.body;
-    await _write(path.join(__dirname, `../runtime/logs/webhook_${body.event.toLowerCase()}.log`), JSON.stringify(body, null, 2));
-    let event = '', source = '', target = '', repo = '';
-    if (body.mergeRequest) {
-      source = body.mergeRequest.head ? body.mergeRequest.head.ref : '';
-      target = body.mergeRequest.base ? body.mergeRequest.base.ref : '';
-      repo = body.mergeRequest.base ? body.mergeRequest.base.repo.name : '';
-    } else {
-      source = body.ref || '';
-      target = body.ref || '';
-      repo = body.repository ? body.repository.name : '';
+root.post('/coding/{:team}/{:project}', async (context) => {
+  const { team, project } = context.params;
+  const body = context.body;
+  await _write(path.join(__dirname, `../runtime/logs/webhook_${body.event.toLowerCase()}.log`), JSON.stringify(body, null, 2));
+  let event = '', source = '', target = '', repo = '';
+  if (body.mergeRequest) {
+    source = body.mergeRequest.head ? body.mergeRequest.head.ref : '';
+    target = body.mergeRequest.base ? body.mergeRequest.base.ref : '';
+    repo = body.mergeRequest.base ? body.mergeRequest.base.repo.name : '';
+  } else {
+    source = body.ref || '';
+    target = body.ref || '';
+    repo = body.repository ? body.repository.name : '';
+  }
+  switch (body.event) {
+    case 'GIT_MR_CREATED':
+      event = 'merge_created';
+      break;
+    case 'GIT_MR_NOTE':
+    case 'GIT_PUSHED':
+    case 'GIT_MR_UPDATED':
+      event = 'merge_updated';
+      break;
+    case 'GIT_MR_MERGED':
+    case 'GIT_MR_CLOSED':
+      event = 'merge_closed';
+      break;
+    default:
+      success({ message: '未知事件: ' + body.event });
+  }
+  const mergeRequest = body.mergeRequest || {};
+  const task = {
+    platform: 'coding',
+    team,
+    project,
+    event,
+    source,
+    target,
+    repo,
+    merge_request: mergeRequest,
+    trigger: 'webhook',
+    request: body,
+  };
+  await sendTask(task);
+  success({ event });
+}, {
+  params: {
+    rules: {
+      team: 'required|string',
+      project: 'required|string',
+      base_branch: 'required|string',
     }
-    switch (body.event) {
-      case 'GIT_MR_CREATED':
-        event = 'merge_created';
-        break;
-      case 'GIT_MR_NOTE':
-      case 'GIT_PUSHED':
-      case 'GIT_MR_UPDATED':
-        event = 'merge_updated';
-        break;
-      case 'GIT_MR_MERGED':
-      case 'GIT_MR_CLOSED':
-        event = 'merge_closed';
-        break;
-      default:
-        success({ message: '未知事件: ' + body.event });
-    }
-    const mergeRequest = body.mergeRequest || {};
-    const task = {
-      platform: 'coding',
-      team,
-      project,
-      event,
-      source,
-      target,
-      repo,
-      merge_request: mergeRequest,
-      trigger: 'webhook',
-      request: body
-    };
-    await sendTask(task);
-    success({ event });
-  }]
-}));
+  }
+});
 
 module.exports = root;
