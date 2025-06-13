@@ -37,7 +37,7 @@ const consumer = async () => {
   }, async (msg) => {
     debug.log('received message (user-events)', msg);
     try {
-      const { router, event, task, platform } = msg.body;
+      const { event, task, platform } = msg.body;
       let status = '';
       switch (event) {
         case 'merge_created':
@@ -71,11 +71,7 @@ const consumer = async () => {
         repo: task.repo,
         status: status, // 0: 未完成, 10: 进行中, 20: 已完成
       });
-      const items = await _table('merge_list')
-        .where('router', router)
-        .where('status', 'wait')
-        .select();
-      const context = { platform, task, items, workspace: config.workspace };
+      const context = { platform, task, workspace: config.workspace };
       const workflow = new Workflow(flow);
       await workflow.start(context);
     } catch (err) {

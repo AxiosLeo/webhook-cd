@@ -56,6 +56,7 @@ function matchesBranchPatterns(branchName, patterns) {
  * @typedef {Object} PlatformHandler
  * @property {function(Task): string} getCloneLink - 获取仓库克隆链接
  * @property {function(Task): Promise<string>} getDefaultBranch - 获取默认分支
+ * @property {function(Task): Promise<Array<{source: string, target: string, title: string}>>} getMergeRequest - 获取合并请求
  */
 
 /**
@@ -63,6 +64,7 @@ function matchesBranchPatterns(branchName, patterns) {
  * @param {*} context 
  */
 async function reset(context) {
+  printer.warning('-'.repeat(100));
   let { platform, task } = context;
   if (!platforms.includes(platform)) {
     throw new Error('不支持的平台: ' + platform);
@@ -106,9 +108,12 @@ async function reset(context) {
   await git.branch.reset(target, cwd);
   await git.branch.clear(cwd, false);
   await _shell(`git checkout -b ${tmpBranch}`, cwd, false, false);
+
+  context.items = await platformHandler.getMergeRequest(task);
 }
 
 async function readConfig(context) {
+  printer.warning('-'.repeat(100));
   const ymlConfigFile = path.join(context.cwd, '.cd.yml');
   if (!await _exists(ymlConfigFile)) {
     printer.warning('没有找到 .cd.yml 文件，请检查文件是否存在');
@@ -119,12 +124,11 @@ async function readConfig(context) {
 
   // 这里可以根据配置执行部署逻辑
   context.deployConfig = ymlConfig;
-  debug.log(context.items);
   const items = context.items.filter(i => {
     if (i.source === i.target) {
       return false;
     }
-    if (i.source === `refs/heads/${context.target}`) {
+    if (i.source === `${context.target}`) {
       return false;
     }
 
@@ -152,6 +156,7 @@ async function readConfig(context) {
 }
 
 async function merge(context) {
+  printer.warning('-'.repeat(100));
   let curr = '';
   let { items, cwd } = context;
   let last = null;
@@ -162,11 +167,13 @@ async function merge(context) {
       }
       return a.source > b.source ? 1 : -1;
     });
+    printer.yellow('需要合并的分支: ').println();
+    items.forEach((item) => {
+      printer.yellow(item.source).print(' -> ').green(item.target).println();
+    });
     await _foreach(items, async (item) => {
       curr = item;
       let source = item.source.indexOf('refs/heads/') === -1 ? item.source : item.source.replace('refs/heads/', '');
-      printer.warning(`deploy development branch: ${source}`);
-      debug.log(`git merge origin/${source} -m 'merge: ${source}'`);
       await _exec(`git merge origin/${source} -m 'merge: ${source}'`, cwd);
       last = curr;
       if (!await git.branch.exist(source, cwd)) {
@@ -211,6 +218,7 @@ async function execSteps(label, scripts, context) {
 }
 
 async function deploy(context) {
+  printer.warning('-'.repeat(100));
   try {
     // 合并代码后，再读一次 .cd.yml 文件，避免配置文件被修改
     const ymlConfigFile = path.join(context.cwd, '.cd.yml');
@@ -223,6 +231,11 @@ async function deploy(context) {
       return;
     }
     const deployConfig = context.deployConfig;
+    // 加载 env
+    const env = deployConfig.env || {};
+    Object.keys(env).forEach((key) => {
+      process.env[key] = env[key];
+    });
     const { pre_deploy, post_deploy, cleanup } = deployConfig.scripts || {};
     const deploy = deployConfig.deploy || {};
     const steps = deploy || [];
@@ -251,6 +264,7 @@ async function deploy(context) {
 }
 
 async function end(context) {
+  printer.warning('-'.repeat(100));
   if (context.success) {
     printer.print('Deploy ').green('success').println('!');
   } else {
