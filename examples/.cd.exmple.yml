@@ -1,0 +1,64 @@
+# Webhook-CD 配置文件示例
+# 已支持的特性：
+
+name: webhook-cd-deployment
+
+# 环境变量配置
+env:
+  # 全局环境变量
+  DEPLOY_ENV: develop
+
+# 部署环境的基准分支为代码仓库的默认分支
+
+# 触发条件配置
+on:
+  # 主分支配置 - 监听这些分支的合并请求，非必须。未配置时，默认监听所有分支的合并请求
+  branches:
+    - fix/*
+    - master
+    - develop
+    - release/*
+    - dev/*
+
+  # 排除分支 - 这些分支不会触发部署
+  exclude_branches:
+    - feature/*
+    - hotfix/*
+    - bugfix/*
+    - temp/*
+    - test/*
+    - experimental/*
+    - fix/123-fix-bug
+
+deploy:
+  steps:
+    - name: 代码检查
+      run: |
+        npm run lint
+
+    - name: 构建项目
+      run: |
+        # 如果有构建步骤，在这里添加
+        echo "构建完成"
+
+# 自定义脚本
+scripts:
+  # 部署前执行
+  pre_deploy:
+    - echo "开始部署前检查..."
+    - docker --version
+    - node --version
+    - npm --version
+
+  # 部署后执行
+  post_deploy:
+    - echo "部署完成，执行后续任务..."
+    - pm2 status
+    - df -h
+    - free -m
+
+  # 清理脚本
+  cleanup:
+    - echo "执行清理任务..."
+    - docker system prune -f
+    - npm cache clean --force

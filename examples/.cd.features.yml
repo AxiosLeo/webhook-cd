@@ -1,0 +1,240 @@
+# Webhook-CD 配置文件示例
+# 包含未来可能添加的特性
+
+name: webhook-cd-deployment
+
+# 环境变量配置
+env:
+  # 全局环境变量
+  DEPLOY_ENV: develop
+
+# 部署环境的基准分支
+target:
+  - name: 开发环境
+    branch: master
+
+# 触发条件配置
+on:
+  # 主分支配置 - 监听这些分支的变更
+  branches:
+    - main
+    - master
+    - develop
+    - release/*
+
+  # 排除分支 - 这些分支不会触发部署
+  exclude_branches:
+    - feature/*
+    - hotfix/*
+    - bugfix/*
+    - temp/*
+    - test/*
+    - experimental/*
+
+  # 触发事件类型
+  events:
+    - push
+    - merge_request
+    - pull_request
+
+# 部署作业配置
+jobs:
+  # 构建作业
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 代码检查
+        run: |
+          npm run lint
+
+      - name: 构建项目
+        run: |
+          # 如果有构建步骤，在这里添加
+          echo "构建完成"
+
+  # 部署作业
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 设置环境
+        run: |
+          # 创建必要的目录
+          mkdir -p logs
+          mkdir -p runtime/repos
+
+          # 设置权限
+          chmod +x bin/*.js
+
+      - name: 启动依赖服务
+        run: |
+          # 启动 Docker 服务
+          docker-compose up -d
+
+          # 等待服务启动
+          sleep 30
+
+      - name: 数据库迁移
+        run: |
+          npm run init
+
+      - name: 部署应用
+        run: |
+          # 停止现有服务
+          pm2 stop ecosystem.config.js || true
+
+          # 安装依赖
+          npm ci --production
+
+          # 启动服务
+          pm2 start ecosystem.config.js --env production
+
+          # 保存 PM2 配置
+          pm2 save
+
+          # 设置开机自启
+          pm2 startup
+
+      - name: 健康检查
+        run: |
+          # 等待服务启动
+          sleep 10
+
+          # 检查服务状态
+          pm2 status
+
+          # 检查端口是否可访问
+          curl -f http://localhost:$PORT/health || exit 1
+
+      - name: 部署后清理
+        run: |
+          # 清理临时文件
+          rm -rf node_modules/.cache
+
+          # 清理旧日志（保留最近7天）
+          find logs -name "*.log" -mtime +7 -delete
+
+# 部署策略配置
+deploy:
+  strategy:
+    # 部署策略：滚动更新、蓝绿部署等
+    type: rolling
+
+    # 最大并发部署数
+    max_parallel: 1
+
+    # 部署超时时间（秒）
+    timeout: 600
+
+    # 健康检查配置
+    health_check:
+      enabled: true
+      path: /health
+      interval: 30
+      timeout: 10
+      retries: 3
+
+# 通知配置
+notifications:
+  # 部署成功通知
+  on_success:
+    - type: webhook
+      url: ${{ secrets.WEBHOOK_SUCCESS_URL }}
+    - type: email
+      recipients:
+        - admin@example.com
+
+  # 部署失败通知
+  on_failure:
+    - type: webhook
+      url: ${{ secrets.WEBHOOK_FAILURE_URL }}
+    - type: email
+      recipients:
+        - admin@example.com
+        - dev-team@example.com
+
+# 回滚配置
+rollback:
+  # 自动回滚条件
+  auto_rollback:
+    enabled: true
+    health_check_failures: 3
+    timeout: 300
+
+  # 回滚命令
+  commands:
+    - pm2 stop ecosystem.config.js
+    - git reset --hard HEAD~1
+    - npm ci --production
+    - pm2 start ecosystem.config.js --env production
+
+# 监控配置
+monitoring:
+  # 性能监控
+  performance:
+    enabled: true
+    metrics:
+      - cpu_usage
+      - memory_usage
+      - response_time
+      - error_rate
+
+  # 日志监控
+  logging:
+    enabled: true
+    level: info
+    rotation:
+      max_size: 100M
+      max_files: 7
+      compress: true
+
+# 安全配置
+security:
+  # 敏感信息扫描
+  secrets_scan:
+    enabled: true
+    patterns:
+      - "password"
+      - "token"
+      - "key"
+      - "secret"
+
+  # 权限检查
+  permissions:
+    required:
+      - read
+      - write
+      - execute
+
+    # 禁止的操作
+    forbidden:
+      - rm -rf /
+      - chmod 777
+      - sudo su
+
+# 自定义脚本
+scripts:
+  # 部署前执行
+  pre_deploy:
+    - echo "开始部署前检查..."
+    - docker --version
+    - node --version
+    - npm --version
+
+  # 部署后执行
+  post_deploy:
+    - echo "部署完成，执行后续任务..."
+    - pm2 status
+    - df -h
+    - free -m
+
+  # 清理脚本
+  cleanup:
+    - echo "执行清理任务..."
+    - docker system prune -f
+    - npm cache clean --force
