@@ -78,7 +78,43 @@ docker-compose up -d
 
 This will start MySQL on port `23306` and Redis on port `23679` (as mapped in `docker-compose.yml`).
 
-### 4. Install Dependencies & Run the Application
+### 4. Configure PM2 Log Rotation
+
+To prevent log files from growing too large and consuming excessive disk space, the project uses PM2's log rotation feature. Here's how to set it up:
+
+1. Install the PM2 log rotation module:
+
+```bash
+pm2 install pm2-logrotate
+```
+
+2. Configure global log rotation settings:
+
+```bash
+pm2 set pm2-logrotate:max_size 100M        # Maximum size of each log file
+pm2 set pm2-logrotate:retain 7             # Number of days to keep logs
+pm2 set pm2-logrotate:compress true        # Compress rotated logs
+pm2 set pm2-logrotate:dateFormat YYYY-MM-DD_HH-mm-ss  # Date format for rotated logs
+pm2 set pm2-logrotate:workerInterval 30    # Check interval in seconds
+pm2 set pm2-logrotate:rotateInterval '0 0 * * *'  # Daily rotation at midnight
+pm2 set pm2-logrotate:rotateModule true    # Enable module rotation
+```
+
+3. Verify the configuration:
+
+```bash
+pm2 conf pm2-logrotate
+```
+
+The log rotation configuration will:
+
+- Rotate logs when they reach 100MB or at midnight each day
+- Keep logs for 7 days
+- Compress old logs to save space
+- Store logs in the `logs` directory with timestamps
+- Automatically clean up old logs
+
+### 5. Install Dependencies & Run the Application
 
 ```bash
 npm install
