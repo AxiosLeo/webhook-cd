@@ -229,6 +229,8 @@ async function deploy(context) {
     }
     context.deployConfig = await _yaml(ymlConfigFile);
     if (!context.deployConfig) {
+      printer.warning('读取 .cd.yml 文件失败');
+      context.success = false;
       return;
     }
     const deployConfig = context.deployConfig;
