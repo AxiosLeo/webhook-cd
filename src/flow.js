@@ -193,7 +193,7 @@ async function merge(context) {
 
 async function execSteps(label, scripts, context) {
   if (!scripts) {
-    return;
+    return true;
   }
   printer.yellow(label + ': ').println();
   try {
@@ -205,7 +205,10 @@ async function execSteps(label, scripts, context) {
           printer.yellow(line.name + ': ').println();
           await _exec(line.run, context.cwd);
         });
+      } else if (is.object(script) && script.run) {
+        await _exec(script.run, context.cwd);
       } else {
+        debug.log({ script });
         printer.print('不支持的脚本类型: ').red(script).println();
         return false;
       }
@@ -240,8 +243,8 @@ async function deploy(context) {
       process.env[key] = env[key];
     });
     const { pre_deploy, post_deploy, cleanup } = deployConfig.scripts || {};
-    const deploy = deployConfig.deploy || {};
-    const steps = deploy || [];
+    const deploy = deployConfig.deploy || [];
+    const steps = deploy.steps || [];
     if (!await execSteps('执行预部署脚本', pre_deploy, context)) {
       context.success = false;
       return 'end';
