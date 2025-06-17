@@ -116,7 +116,8 @@ async function readConfig(context) {
   const ymlConfigFile = path.join(context.cwd, '.cd.yml');
   if (!await _exists(ymlConfigFile)) {
     printer.warning('没有找到 .cd.yml 文件，请检查文件是否存在');
-    return;
+    context.success = false;
+    return 'end';
   }
   const ymlConfig = await _yaml(ymlConfigFile);
   printer.print('读取到配置: ').green(ymlConfig.name || '未命名').println();
@@ -176,7 +177,7 @@ async function merge(context) {
       await _exec(`git merge origin/${source} -m 'merge: ${source}'`, cwd);
       last = curr;
       if (!await git.branch.exist(source, cwd)) {
-        return;
+        throw new Error('分支不存在: ' + source);
       }
     });
     context.success = true;
