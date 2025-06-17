@@ -73,10 +73,9 @@ async function reset(context) {
   /** @type {PlatformHandler} */
   const platformHandler = new PlatformHandlerClass();
   let defaultBranch = await platformHandler.getDefaultBranch(task);
-  defaultBranch = `refs/heads/${defaultBranch}`;
   if (task.target !== defaultBranch) {
     printer.print('目标分支: ').yellow(task.target).println(' 不是默认分支: ' + defaultBranch);
-    return;
+    return 'end';
   }
 
   let repo = context.task.repo;
