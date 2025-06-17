@@ -219,6 +219,7 @@ async function execSteps(label, scripts, context) {
 
 async function deploy(context) {
   printer.warning('-'.repeat(100));
+  printer.print('开始部署: ').green(context.task.repo).println();
   try {
     // 合并代码后，再读一次 .cd.yml 文件，避免配置文件被修改
     const ymlConfigFile = path.join(context.cwd, '.cd.yml');
