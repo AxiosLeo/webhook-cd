@@ -21,6 +21,7 @@
     "crypto-js": "^4.1.1",
     "dotenv": "^16.0.3",
     "moment": "^2.29.1",
+    "octokit": "^5.0.3",
     "rabbitmq-client": "^5.0.2",
     "uuid": "^9.0.1",
     "validatorjs": "^3.22.1",
