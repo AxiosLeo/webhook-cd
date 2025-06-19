@@ -2,9 +2,9 @@
 
 const { Router, error, success } = require('@axiosleo/koapp');
 const { debug } = require('@axiosleo/cli-tool');
-const { _write } = require('@axiosleo/cli-tool/src/helper/fs');
-const path = require('path');
 const { sendTask } = require('./task');
+const CodingController = require('./controllers/coding');
+const GithubController = require('./controllers/github');
 
 const auth = async (context) => {
   const ctx = context.koa;
@@ -26,51 +26,28 @@ root.new('/***', {
   }]
 });
 
-root.post('/coding/{:team}/{:project}', async (context) => {
-  const { team, project } = context.params;
-  const body = context.body;
-  await _write(path.join(__dirname, `../runtime/logs/webhook_${body.event.toLowerCase()}.log`), JSON.stringify(body, null, 2));
-  let event = '', source = '', target = '', repo = '';
-  if (body.mergeRequest) {
-    source = body.mergeRequest.head ? body.mergeRequest.head.ref : '';
-    target = body.mergeRequest.base ? body.mergeRequest.base.ref : '';
-    repo = body.mergeRequest.base ? body.mergeRequest.base.repo.name : '';
-  } else {
-    source = body.ref || '';
-    target = body.ref || '';
-    repo = body.repository ? body.repository.name : '';
+root.post('/{:platform}/{:team}/{:project}', async (context) => {
+  try {
+    const { platform, team, project } = context.params;
+    const body = context.body;
+    let task = null;
+    if (platform === 'github') {
+      const controller = new GithubController();
+      task = await controller.receiveEvent(team, project, body);
+    } else if (platform === 'coding') {
+      const controller = new CodingController();
+      task = await controller.receiveEvent(team, project, body);
+    } else {
+      error(400, 'Unknown platform');
+    }
+    if (!task) {
+      success({ event: 'unknown' });
+    }
+    await sendTask(task);
+    success({ event: task.event });
+  } catch (err) {
+    error(500, err.message);
   }
-  switch (body.event) {
-    case 'GIT_MR_CREATED':
-      event = 'merge_created';
-      break;
-    case 'GIT_MR_NOTE':
-    case 'GIT_PUSHED':
-    case 'GIT_MR_UPDATED':
-      event = 'merge_updated';
-      break;
-    case 'GIT_MR_MERGED':
-    case 'GIT_MR_CLOSED':
-      event = 'merge_closed';
-      break;
-    default:
-      success({ message: '未知事件: ' + body.event });
-  }
-  const mergeRequest = body.mergeRequest || {};
-  const task = {
-    platform: 'coding',
-    team,
-    project,
-    event,
-    source,
-    target,
-    repo,
-    merge_request: mergeRequest,
-    trigger: 'webhook',
-    request: body,
-  };
-  await sendTask(task);
-  success({ event });
 }, {
   params: {
     rules: {

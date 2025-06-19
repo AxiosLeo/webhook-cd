@@ -8,8 +8,7 @@ const { printer } = require('@axiosleo/cli-tool');
 const { _exists, _mkdir } = require('@axiosleo/cli-tool/src/helper/fs');
 const { _yaml } = require('./utils');
 const is = require('@axiosleo/cli-tool/src/helper/is');
-
-const platforms = ['coding'];
+const config = require('../config');
 
 /**
  * 通配符匹配函数
@@ -66,7 +65,7 @@ function matchesBranchPatterns(branchName, patterns) {
 async function reset(context) {
   printer.warning('-'.repeat(100));
   let { platform, task } = context;
-  if (!platforms.includes(platform)) {
+  if (!config.platforms.includes(platform)) {
     throw new Error('不支持的平台: ' + platform);
   }
   const PlatformHandlerClass = require(`./platform/${platform}`);
@@ -107,7 +106,6 @@ async function reset(context) {
   await git.branch.reset(target, cwd);
   await git.branch.clear(cwd, false);
   await _shell(`git checkout -b ${tmpBranch}`, cwd, false, false);
-
   context.items = await platformHandler.getMergeRequest(task);
 }
 

@@ -3,7 +3,6 @@
 const config = require('../config');
 const { Connection } = require('rabbitmq-client');
 const { debug } = require('@axiosleo/cli-tool');
-const { _table } = require('./utils');
 const { Workflow } = require('@axiosleo/cli-tool');
 const flow = require('./flow');
 const { printer } = require('@axiosleo/cli-tool');
@@ -50,28 +49,7 @@ const consumer = async () => {
         default:
           throw new Error('未知事件: ' + event);
       }
-
-      // // 在日志表中插入记录
-      await _table('task_logs').insert({
-        router: task.router,
-        event: task.event,
-        trigger: task.trigger,
-        request: task.request || {}
-      });
-
-      // // 在当前分支管理表中插入记录
-      await _table('merge_list').keys('uuid', task.uuid).insert({
-        uuid: task.uuid,
-        router: task.router,
-        platform: task.platform,
-        team: task.team,
-        project: task.project,
-        source: task.source,
-        target: task.target,
-        repo: task.repo,
-        status: status, // 0: 未完成, 10: 进行中, 20: 已完成
-      });
-      const context = { platform, task, workspace: config.workspace };
+      const context = { platform, task, workspace: config.workspace, status };
       const workflow = new Workflow(flow);
       await workflow.start(context);
     } catch (err) {
