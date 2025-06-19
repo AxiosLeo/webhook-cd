@@ -8,6 +8,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 module.exports = {
   workspace: process.env.WORKSPACE ? path.resolve(process.env.WORKSPACE) :
     path.join(__dirname, 'runtime/repos'),
+  platforms: ['coding', 'github'],
   rabbit: {
     topic: 'deploy-queue',
     exchange: 'webhook-events',
@@ -24,9 +25,13 @@ module.exports = {
     database: process.env.MYSQL_DB || 'webhook'
   },
   coding: {
-    username: process.env.CODING_USERNAME || '',
-    user_token: process.env.CODING_USERTOKEN || '',
+    username: process.env.CODING_USER || '',
+    user_token: process.env.CODING_TOKEN || '',
     client_id: process.env.CODING_CLIENT_ID || '',
     client_secret: process.env.CODING_CLIENT_SECRET || '',
+  },
+  github: {
+    username: process.env.GITHUB_USER || '',
+    user_token: process.env.GITHUB_TOKEN || '',
   }
 };
