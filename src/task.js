@@ -10,7 +10,7 @@ const Validator = require('validatorjs');
  */
 async function sendTask(task) {
   let validation = new Validator(task, {
-    platform: ['required', 'string', { in: ['coding'] }],
+    platform: ['required', 'string', { in: config.platforms }],
     team: ['required', 'string'],
     project: ['required', 'string'],
     repo: ['required', 'string'],

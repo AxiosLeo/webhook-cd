@@ -102,7 +102,6 @@ async function reset(context) {
     debug.log(err);
     return false;
   }
-
   await git.branch.reset(target, cwd);
   await git.branch.clear(cwd, false);
   await _shell(`git checkout -b ${tmpBranch}`, cwd, false, false);
@@ -112,6 +111,7 @@ async function reset(context) {
 async function readConfig(context) {
   printer.warning('-'.repeat(100));
   const ymlConfigFile = path.join(context.cwd, '.cd.yml');
+  let items = [];
   if (!await _exists(ymlConfigFile)) {
     printer.warning('没有找到 .cd.yml 文件，请检查文件是否存在');
     context.success = false;
@@ -119,10 +119,8 @@ async function readConfig(context) {
   }
   const ymlConfig = await _yaml(ymlConfigFile);
   printer.print('读取到配置: ').green(ymlConfig.name || '未命名').println();
-
-  // 这里可以根据配置执行部署逻辑
   context.deployConfig = ymlConfig;
-  const items = context.items.filter(i => {
+  items = context.items.filter(i => {
     if (i.source === i.target) {
       return false;
     }

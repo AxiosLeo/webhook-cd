@@ -34,21 +34,9 @@ const consumer = async () => {
     // With a "topic" exchange, messages matching this pattern are routed to the queue
     queueBindings: [{ exchange: c.exchange, routingKey: 'webhook.*' }],
   }, async (msg) => {
-    debug.log('received message (user-events)', msg);
     try {
-      const { event, task, platform } = msg.body;
+      const { task, platform } = msg.body;
       let status = '';
-      switch (event) {
-        case 'merge_created':
-        case 'merge_updated':
-          status = 'wait';
-          break;
-        case 'merge_closed':
-          status = 'closed';
-          break;
-        default:
-          throw new Error('未知事件: ' + event);
-      }
       const context = { platform, task, workspace: config.workspace, status };
       const workflow = new Workflow(flow);
       await workflow.start(context);
