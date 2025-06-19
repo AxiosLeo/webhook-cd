@@ -7,6 +7,7 @@ class CodingPlatform {
   constructor() {
     this.coding = new CodingSDK();
   }
+
   getCloneLink(task) {
     const { team, project, repo } = task;
     return `https://${config.coding.username}:${config.coding.user_token}@e.coding.net/${team}/${project}/${repo}.git`;
