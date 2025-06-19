@@ -7,11 +7,11 @@ const CodingController = require('./controllers/coding');
 const GithubController = require('./controllers/github');
 
 const auth = async (context) => {
-  const ctx = context.koa;
-  const userAgent = ctx.request.header['user-agent'];
-  if (userAgent !== 'Coding.net Hook') {
-    error(403, 'Unauthorized');
-  }
+  // const ctx = context.koa;
+  // const userAgent = ctx.request.header['user-agent'];
+  // if (userAgent !== 'Coding.net Hook') {
+  //   error(403, 'Unauthorized');
+  // }
 };
 
 const root = new Router('', {
@@ -27,27 +27,23 @@ root.new('/***', {
 });
 
 root.post('/{:platform}/{:team}/{:project}', async (context) => {
-  try {
-    const { platform, team, project } = context.params;
-    const body = context.body;
-    let task = null;
-    if (platform === 'github') {
-      const controller = new GithubController();
-      task = await controller.receiveEvent(team, project, body);
-    } else if (platform === 'coding') {
-      const controller = new CodingController();
-      task = await controller.receiveEvent(team, project, body);
-    } else {
-      error(400, 'Unknown platform');
-    }
-    if (!task) {
-      success({ event: 'unknown' });
-    }
-    await sendTask(task);
-    success({ event: task.event });
-  } catch (err) {
-    error(500, err.message);
+  const { platform, team, project } = context.params;
+  const body = context.body;
+  let task = null;
+  if (platform === 'github') {
+    const controller = new GithubController();
+    task = await controller.receiveEvent(team, project, JSON.parse(body.payload));
+  } else if (platform === 'coding') {
+    const controller = new CodingController();
+    task = await controller.receiveEvent(team, project, body);
+  } else {
+    error(400, 'Unknown platform');
   }
+  if (!task) {
+    success({ event: 'unknown' });
+  }
+  await sendTask(task);
+  success({ event: task.event });
 }, {
   params: {
     rules: {
