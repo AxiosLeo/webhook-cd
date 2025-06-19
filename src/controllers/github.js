@@ -1,5 +1,7 @@
 'use strict';
 
+const { printer } = require('@axiosleo/cli-tool');
+const is = require('@axiosleo/cli-tool/src/helper/is.js');
 const { Controller } = require('@axiosleo/koapp');
 
 class GithubController extends Controller {
@@ -8,35 +10,27 @@ class GithubController extends Controller {
    * @returns {Promise<import('../../index.d.ts').TaskInfo>}
    */
   async receiveEvent(team, project, body) {
-    if (!body.pull_request) {
+    if (is.empty(body.pull_request)) {
       return null;
     }
-    let event, source, target, repo;
-    event = body.action === 'opened' ? 'merge_created' : 'merge_updated';
+    let source, target, repo;
     switch (body.action) {
       case 'opened':
-        event = 'merge_created';
-        break;
       case 'synchronize':
-        event = 'merge_updated';
-        break;
       case 'closed':
-        event = 'merge_closed';
         break;
       default:
+        printer.warning('Unknown action: ', body.action);
         return null;
-    }
-    if (!event) {
-      return null;
     }
     source = body.pull_request.head.ref;
     target = body.pull_request.base.ref;
     repo = body.repository.name;
     const task = {
-      platform: 'coding',
+      platform: 'github',
       team,
       project,
-      event,
+      event: body.action,
       source,
       target,
       repo,
