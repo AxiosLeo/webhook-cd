@@ -1,4 +1,4 @@
-export type Platform = 'coding';
+export type Platform = 'coding' | 'github';
 
 export type WebhookEvent = 'merge_created';
 
