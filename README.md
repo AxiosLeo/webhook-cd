@@ -17,26 +17,23 @@ Webhook-CD is a tool designed to automate continuous deployment workflows by lis
 The system works by:
 
 1. **Listening for Webhooks**: An HTTP server listens for incoming webhook events from Coding.net, specifically related to merge requests (created, updated, merged, closed).
-2. **Logging & Task Tracking**: Received webhook data is logged into a MySQL database, and the status of associated tasks (e.g., merge requests) is tracked.
-3. **Automated Deployments**: Based on repository configurations, the tool monitors for deployable events (like a merged merge request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
-4. **CLI for Manual Control**: A command-line interface (CLI) tool, `wcd`, is provided for manual task inspection and triggering.
+2. **Automated Deployments**: Based on repository configurations, the tool monitors for deployable events (like a merged merge request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
+3. **CLI for Manual Control**: A command-line interface (CLI) tool, `wcd`, is provided for manual task inspection and triggering.
 
 ## Features
 
 - Webhook integration with Coding.net (specifically for Merge Request events).
 - Automated Git operations for deployment based on webhook triggers.
-- Database logging of webhook events and task statuses (MySQL).
+- Message queue integration with RabbitMQ for reliable task processing.
 - Configuration via environment variables for flexibility.
-- Dockerized setup for easy deployment of dependencies (MySQL, Redis).
 - CLI tool (`wcd`) for manual interaction and task management.
 
 ## Prerequisites
 
-- Docker and Docker Compose
-- Node.js and npm (for running locally outside Docker or for development)
+- Node.js and npm
 - Access to a Coding.net instance and repositories you wish to deploy.
-- A MySQL server (can be run via the provided `docker-compose.yml`).
-- A Redis server (can be run via the provided `docker-compose.yml`).
+- RabbitMQ server (recommended: use Docker for development environment)
+- Docker (optional, for running RabbitMQ in development)
 
 ## Setup & Configuration
 
@@ -50,14 +47,6 @@ cd webhook-cd
 ### 2. Configure Environment Variables
 
 The application uses environment variables for its configuration. Create a `.env` file in the root of the project or set these variables in your deployment environment.
-
-**Database Configuration (MySQL):**
-
-- `MYSQL_HOST`: Hostname of your MySQL server (e.g., `localhost` or `webhook-mysql` if using Docker Compose).
-- `MYSQL_PORT`: Port for MySQL (default: `23306` as per `docker-compose.yml`, or `3306` for standard MySQL).
-- `MYSQL_USER`: MySQL username (default: `root`).
-- `MYSQL_PASS`: MySQL password (default: `password`).
-- `MYSQL_DB`: MySQL database name (default: `webhook`).
 
 **RabbitMQ Configuration:**
 
@@ -78,15 +67,29 @@ The application uses environment variables for its configuration. Create a `.env
 - `PORT`: Port for the webhook listener to run on (default: `8800`).
 - `LISTEN_HOST`: Host for the webhook listener (default: `0.0.0.0`).
 
-### 3. Start Services (Docker)
+### 3. Start RabbitMQ (Development Environment)
 
-The easiest way to get MySQL and Redis running is via Docker Compose:
+For development, you can easily start a RabbitMQ container using Docker:
+
+```bash
+docker run -d --name rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  -e RABBITMQ_DEFAULT_USER=guest \
+  -e RABBITMQ_DEFAULT_PASS=guest \
+  rabbitmq:3-management
+```
+
+This will start RabbitMQ with:
+
+- AMQP port: `5672`
+- Management UI: `http://localhost:15672` (username: `guest`, password: `guest`)
+
+Alternatively, the project includes a pre-configured `docker-compose.yml` file with RabbitMQ. You can use:
 
 ```bash
 docker-compose up -d
 ```
-
-This will start MySQL on port `23306` and Redis on port `23679` (as mapped in `docker-compose.yml`).
 
 ### 4. Configure PM2 Log Rotation
 
@@ -160,8 +163,8 @@ For each project in Coding.net that you want to integrate:
 ### 2. How Deployments Work
 
 1. When a configured event (e.g., a merge request is merged) occurs in Coding.net for a monitored repository and branch, Coding.net sends a webhook to your Webhook-CD instance.
-2. Webhook-CD logs the event and updates the status in its database.
-3. The `runTasks` process in `index.js` periodically checks for new, undeployed events for the configured repositories.
+2. Webhook-CD processes the event and triggers the appropriate deployment actions.
+3. The system monitors for deployable events for the configured repositories.
 4. If a deployable event is found, Webhook-CD will attempt to perform Git operations (like `git checkout`, `git reset --hard origin/{branch}`, `git pull`) in the corresponding local directory. Ensure this directory exists and is properly initialized as a Git repository, or is a location where the tool can clone into.
 
 ## CLI Tool (`wcd`)
