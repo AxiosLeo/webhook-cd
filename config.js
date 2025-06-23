@@ -33,5 +33,6 @@ module.exports = {
   github: {
     username: process.env.GITHUB_USER || '',
     user_token: process.env.GITHUB_TOKEN || '',
+    webhook_secret: process.env.GITHUB_WEBHOOK_SECRET || '',
   }
 };
