@@ -3,7 +3,7 @@
 // eslint-disable-next-line no-unused-vars
 const { Command, printer, debug } = require('@axiosleo/cli-tool');
 const { open } = require('../src/task');
-const CodingSDK = require('../src/coding');
+const CodingSDK = require('../src/sdk/coding');
 const { _foreach } = require('@axiosleo/cli-tool/src/helper/cmd');
 const { _db } = require('../src/utils');
 const { QueryHandler } = require('@axiosleo/orm-mysql');
@@ -12,7 +12,7 @@ class PopCommand extends Command {
   constructor() {
     super({
       name: 'refresh',
-      desc: ''
+      desc: 'refresh Merge Request status to trigger CD'
     });
   }
 

@@ -11,7 +11,7 @@ class PopCommand extends Command {
   constructor() {
     super({
       name: 'pop',
-      desc: ''
+      desc: 'close Merge Request event to trigger CD'
     });
     this.addArgument('team', 'Team name', 'required', null);
     this.addArgument('project', 'Project name', 'required', null);
