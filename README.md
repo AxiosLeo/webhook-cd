@@ -57,15 +57,14 @@ The application uses environment variables for its configuration. Create a `.env
 
 **Coding.net Configuration:**
 
-- `CODING_USER_TOKEN`: Your Coding.net user token for API access.
-- `CODING_CLIENT_ID`: Your Coding.net OAuth client ID.
-- `CODING_CLIENT_SECRET`: Your Coding.net OAuth client secret.
+- `CODING_USER`: Your Coding.net username.
+- `CODING_USERTOKEN`: Your Coding.net user token for API access.
 
 **Application Configuration:**
 
 - `WORKSPACE`: (Optional) The base workspace directory. Defaults to `runtime/repos` relative to the application root.
-- `PORT`: Port for the webhook listener to run on (default: `8800`).
 - `LISTEN_HOST`: Host for the webhook listener (default: `0.0.0.0`).
+- `LISTEN_PORT`: Port for the webhook listener to run on (default: `8800`).
 
 ### 3. Start RabbitMQ (Development Environment)
 
@@ -177,15 +176,15 @@ You might need to link it globally or run it via `npx` if not installed globally
 ```bash
 npm link # if you want to use 'wcd' directly
 # or run via npx
-npx wcd --help
+npx @axiosleo/webhook-cd --help
 ```
 
 **Available Commands:**
 The CLI allows you to manually trigger the internal event system. This can be useful for testing or re-processing tasks. The commands are defined in the `commands/` directory.
 
-- `wcd pop <project> <repo> [options]`: Simulates a `GIT_MR_CLOSED` event.
 - `wcd push <project> <repo> [options]`: Simulates a `GIT_MR_CREATED` event. (Note: The file `commands/push.js` might have a naming error, referring to itself as 'pop').
 - `wcd refresh <project> <repo> [options]`: Simulates a `GIT_MR_UPDATED` event. (Note: The file `commands/refresh.js` might have a naming error).
+- `wcd pop <project> <repo> [options]`: Simulates a `GIT_MR_CLOSED` event.
 
 **Common Options for CLI commands:**
 
@@ -196,7 +195,7 @@ The CLI allows you to manually trigger the internal event system. This can be us
 Example:
 
 ```bash
-wcd pop myawesomeproject myfrontendapp -t development
+wcd pop myteam myawesomeproject myfrontendapp --source dev-branch
 ```
 
 ## License
