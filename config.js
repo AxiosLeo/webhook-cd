@@ -27,8 +27,6 @@ module.exports = {
   coding: {
     username: process.env.CODING_USER || '',
     user_token: process.env.CODING_TOKEN || '',
-    client_id: process.env.CODING_CLIENT_ID || '',
-    client_secret: process.env.CODING_CLIENT_SECRET || '',
   },
   github: {
     username: process.env.GITHUB_USER || '',
