@@ -201,8 +201,14 @@ async function execSteps(label, scripts, context) {
           printer.yellow(line.name + ': ').println();
           await _exec(line.run, context.cwd);
         });
-      } else if (is.object(script) && script.run) {
-        await _exec(script.run, context.cwd);
+      } else if (is.object(script) && !is.empty(script.run)) {
+        if (is.array(script.run)) {
+          await _foreach(script.run, async (line) => {
+            await _exec(line, context.cwd);
+          });
+        } else {
+          await _exec(script.run, context.cwd);
+        }
       } else {
         debug.log({ script });
         printer.print('不支持的脚本类型: ').red(script).println();
