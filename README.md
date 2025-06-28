@@ -1,4 +1,4 @@
-# Webhook-CD: Continuous Deployment via Webhooks for Coding.net
+# Webhook-CD: Continuous Deployment via Webhooks for Coding.net & GitHub
 
 > **⚠️ 重要警告 / IMPORTANT WARNING**
 >
@@ -10,19 +10,19 @@
 >
 > This tool is designed for development automation and has not been validated for production security and stability. Using it in production may result in data loss, service interruption, or security risks.
 
-Webhook-CD is a tool designed to automate continuous deployment workflows by listening to webhooks, primarily from Coding.net. It processes Git merge request events to trigger deployment actions on configured repositories.
+Webhook-CD is a tool designed to automate continuous deployment workflows by listening to webhooks from both Coding.net and GitHub platforms. It processes Git merge/pull request events to trigger deployment actions on configured repositories.
 
 ## Overview
 
 The system works by:
 
-1. **Listening for Webhooks**: An HTTP server listens for incoming webhook events from Coding.net, specifically related to merge requests (created, updated, merged, closed).
-2. **Automated Deployments**: Based on repository configurations, the tool monitors for deployable events (like a merged merge request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
+1. **Listening for Webhooks**: An HTTP server listens for incoming webhook events from Coding.net and GitHub, specifically related to merge/pull requests (created, updated, merged, closed).
+2. **Automated Deployments**: Based on repository configurations, the tool monitors for deployable events (like a merged merge/pull request). When such an event occurs for a configured repository and branch, it performs Git operations (e.g., checkout, pull) in a specified local directory to deploy the changes.
 3. **CLI for Manual Control**: A command-line interface (CLI) tool, `wcd`, is provided for manual task inspection and triggering.
 
 ## Features
 
-- Webhook integration with Coding.net (specifically for Merge Request events).
+- Webhook integration with Coding.net and GitHub (for Merge/Pull Request events).
 - Automated Git operations for deployment based on webhook triggers.
 - Message queue integration with RabbitMQ for reliable task processing.
 - Configuration via environment variables for flexibility.
@@ -31,7 +31,7 @@ The system works by:
 ## Prerequisites
 
 - Node.js and npm
-- Access to a Coding.net instance and repositories you wish to deploy.
+- Access to Coding.net and/or GitHub repositories you wish to deploy.
 - RabbitMQ server (recommended: use Docker for development environment)
 - Docker (optional, for running RabbitMQ in development)
 
@@ -59,6 +59,12 @@ The application uses environment variables for its configuration. Create a `.env
 
 - `CODING_USER`: Your Coding.net username.
 - `CODING_TOKEN`: Your Coding.net user token for API access.
+
+**GitHub Configuration:**
+
+- `GITHUB_USER`: Your GitHub username.
+- `GITHUB_TOKEN`: Your GitHub personal access token for API access.
+- `GITHUB_WEBHOOK_SECRET`: (Optional) Secret token for webhook signature verification.
 
 **Application Configuration:**
 
@@ -171,6 +177,8 @@ docker run -e MAIN_BIN=api \
   -e RABBITMQ_HOST=your_rabbitmq_host \
   -e CODING_USER=your_username \
   -e CODING_TOKEN=your_token \
+  -e GITHUB_USER=your_github_username \
+  -e GITHUB_TOKEN=your_github_token \
   -p 8800:8800 \
   webhook-cd
 ```
@@ -190,6 +198,8 @@ docker run -e MAIN_BIN=consumer \
   -e RABBITMQ_PASS=guest \
   -e CODING_USER=your_username \
   -e CODING_TOKEN=your_token \
+  -e GITHUB_USER=your_github_username \
+  -e GITHUB_TOKEN=your_github_token \
   webhook-cd
 ```
 
@@ -252,6 +262,11 @@ RABBITMQ_PASS=guest
 CODING_USER=your_username
 CODING_TOKEN=your_token
 
+# GitHub Configuration
+GITHUB_USER=your_username
+GITHUB_TOKEN=your_token
+GITHUB_WEBHOOK_SECRET=your_webhook_secret
+
 # Application Configuration
 WORKSPACE=/app/runtime/repos  # Container path
 LISTEN_HOST=0.0.0.0
@@ -272,7 +287,9 @@ docker run --env-file .env \
 
 ## Usage
 
-### 1. Configure Webhooks in Coding.net
+### 1. Configure Webhooks
+
+#### For Coding.net Projects
 
 For each project in Coding.net that you want to integrate:
 
@@ -288,7 +305,25 @@ For each project in Coding.net that you want to integrate:
    - **Events**: Select the events you want to trigger the webhook. This tool is primarily designed for "Merge Request" events (Push, Opened, Merged, Closed, Commented).
    - Ensure the webhook is active.
 
-**Important**: The application currently authenticates webhooks by checking if the `User-Agent` header is `Coding.net Hook`.
+**Important**: The application currently authenticates Coding.net webhooks by checking if the `User-Agent` header is `Coding.net Hook`.
+
+#### For GitHub Projects
+
+For each GitHub repository that you want to integrate:
+
+1. Go to your repository settings on GitHub.
+2. Navigate to "Settings" > "Webhooks" > "Add webhook".
+3. Configure the webhook with the following details:
+   - **Payload URL**: `http://<your_server_address>:<PORT>/github/{owner}/{repo}`
+     - Replace `<your_server_address>` with the IP or hostname where Webhook-CD is running.
+     - Replace `<PORT>` with the port Webhook-CD is listening on (e.g., `8800`).
+     - Replace `{owner}` and `{repo}` with your GitHub username/organization and repository name.
+   - **Content type**: `application/json`
+   - **Secret**: (Optional but recommended) Use the same value as `GITHUB_WEBHOOK_SECRET` environment variable for signature verification.
+   - **Events**: Select "Pull requests" to trigger on pull request events (opened, synchronized, closed).
+   - **Active**: Ensure the webhook is active.
+
+**Important**: GitHub webhooks support signature verification using HMAC-SHA256 when a secret is configured.
 
 ### 2. How Deployments Work
 
