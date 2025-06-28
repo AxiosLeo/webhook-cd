@@ -1,0 +1,47 @@
+# 排除不必要的文件和目录
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 排除示例和日志目录
+examples/
+logs/
+runtime/
+
+# 排除开发相关文件
+.git
+.gitignore
+.gitattributes
+.github/
+.vscode/
+.idea/
+
+# 排除测试和文档
+*.md
+test/
+tests/
+spec/
+docs/
+
+# 排除配置文件（根据需要调整）
+.env
+.env.local
+.env.*.local
+nodemon.json
+
+# 排除构建产物
+dist/
+build/
+coverage/
+
+# 排除临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# 排除 Docker 相关文件
+Dockerfile*
+docker-compose*
+.dockerignore 
