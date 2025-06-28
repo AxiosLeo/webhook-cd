@@ -8,8 +8,7 @@
   "scripts": {
     "start": "node ./index.js",
     "dev": "nodemon ./index.js",
-    "lint": "eslint src/",
-    "init": "orm-mysql migrate up ./migrations"
+    "lint": "eslint src/"
   },
   "author": "axiosleo",
   "license": "MIT",
