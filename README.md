@@ -3,7 +3,6 @@
 English | [简体中文](/README-CN.md)
 
 [![NPM version](https://img.shields.io/npm/v/@axiosleo/webhook-cd.svg?style=flat-square)](https://npmjs.org/package/@axiosleo/webhook-cd)
-[![npm download](https://img.shields.io/npm/dm/@axiosleo/webhook-cd.svg?style=flat-square)](https://npmjs.org/package/@axiosleo/webhook-cd)
 [![node version](https://img.shields.io/badge/node.js-%3E=_18.0-green.svg?style=flat-square)](http://nodejs.org/download/)
 [![License](https://img.shields.io/github/license/AxiosLeo/webhook-cd?color=%234bc524)](LICENSE)
 
