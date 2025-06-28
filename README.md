@@ -58,7 +58,7 @@ The application uses environment variables for its configuration. Create a `.env
 **Coding.net Configuration:**
 
 - `CODING_USER`: Your Coding.net username.
-- `CODING_USERTOKEN`: Your Coding.net user token for API access.
+- `CODING_TOKEN`: Your Coding.net user token for API access.
 
 **Application Configuration:**
 
@@ -170,7 +170,7 @@ docker run -e MAIN_BIN=api \
   -e LISTEN_PORT=8800 \
   -e RABBITMQ_HOST=your_rabbitmq_host \
   -e CODING_USER=your_username \
-  -e CODING_USERTOKEN=your_token \
+  -e CODING_TOKEN=your_token \
   -p 8800:8800 \
   webhook-cd
 ```
@@ -189,7 +189,7 @@ docker run -e MAIN_BIN=consumer \
   -e RABBITMQ_USER=guest \
   -e RABBITMQ_PASS=guest \
   -e CODING_USER=your_username \
-  -e CODING_USERTOKEN=your_token \
+  -e CODING_TOKEN=your_token \
   webhook-cd
 ```
 
@@ -250,7 +250,7 @@ RABBITMQ_PASS=guest
 
 # Coding.net Configuration
 CODING_USER=your_username
-CODING_USERTOKEN=your_token
+CODING_TOKEN=your_token
 
 # Application Configuration
 WORKSPACE=/app/runtime/repos  # Container path
