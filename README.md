@@ -139,6 +139,137 @@ Or, for development with auto-reloading:
 npm run dev
 ```
 
+## Docker Deployment
+
+The application supports Docker containerization with flexible deployment options for different services.
+
+### 1. Build Docker Image
+
+```bash
+docker build -t webhook-cd .
+```
+
+### 2. Container Startup Options
+
+The Docker image supports running two different services based on the `MAIN_BIN` environment variable:
+
+- `MAIN_BIN=api`: Runs the webhook API server (`./bin/api.js`)
+- `MAIN_BIN=consumer`: Runs the message queue consumer (`./bin/consumer.js`)
+
+### 3. Running API Server Container
+
+The API server listens for webhooks and runs on port 8800 by default:
+
+```bash
+# Run with environment file
+docker run --env-file .env -e MAIN_BIN=api -p 8800:8800 webhook-cd
+
+# Or with explicit environment variables
+docker run -e MAIN_BIN=api \
+  -e LISTEN_HOST=0.0.0.0 \
+  -e LISTEN_PORT=8800 \
+  -e RABBITMQ_HOST=your_rabbitmq_host \
+  -e CODING_USER=your_username \
+  -e CODING_USERTOKEN=your_token \
+  -p 8800:8800 \
+  webhook-cd
+```
+
+### 4. Running Consumer Container
+
+The consumer processes messages from the RabbitMQ queue:
+
+```bash
+# Run with environment file
+docker run --env-file .env -e MAIN_BIN=consumer webhook-cd
+
+# Or with explicit environment variables
+docker run -e MAIN_BIN=consumer \
+  -e RABBITMQ_HOST=your_rabbitmq_host \
+  -e RABBITMQ_USER=guest \
+  -e RABBITMQ_PASS=guest \
+  -e CODING_USER=your_username \
+  -e CODING_USERTOKEN=your_token \
+  webhook-cd
+```
+
+### 5. Docker Compose Example
+
+Create a `docker-compose.override.yml` file for complete deployment:
+
+```yaml
+version: "3.8"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  webhook-api:
+    build: .
+    ports:
+      - "8800:8800"
+    environment:
+      - MAIN_BIN=api
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+
+  webhook-consumer:
+    build: .
+    environment:
+      - MAIN_BIN=consumer
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+```
+
+Then run:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+```
+
+### 6. Environment Variables for Docker
+
+When running in Docker, ensure your `.env` file or environment variables include:
+
+```bash
+# RabbitMQ Configuration
+RABBITMQ_HOST=localhost  # or your RabbitMQ container name
+RABBITMQ_PORT=5672
+RABBITMQ_USER=guest
+RABBITMQ_PASS=guest
+
+# Coding.net Configuration
+CODING_USER=your_username
+CODING_USERTOKEN=your_token
+
+# Application Configuration
+WORKSPACE=/app/runtime/repos  # Container path
+LISTEN_HOST=0.0.0.0
+LISTEN_PORT=8800
+```
+
+### 7. Volume Mounting for Persistent Data
+
+If you need to persist repository data across container restarts:
+
+```bash
+docker run --env-file .env \
+  -e MAIN_BIN=api \
+  -p 8800:8800 \
+  -v $(pwd)/runtime:/app/runtime \
+  webhook-cd
+```
+
 ## Usage
 
 ### 1. Configure Webhooks in Coding.net
