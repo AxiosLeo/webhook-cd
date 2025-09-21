@@ -8,5 +8,5 @@
     "commands",
     "index.js"
   ],
-  "exec": "node --trace-warnings ./index.js"
+  "exec": "node --trace-warnings ./bin/api.js"
 }

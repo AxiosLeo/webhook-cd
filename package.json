@@ -6,8 +6,8 @@
     "wcd": "./bin/wcd.js"
   },
   "scripts": {
-    "start": "node ./index.js",
-    "dev": "nodemon ./index.js",
+    "start": "node ./bin/api.js",
+    "dev": "nodemon ./bin/api.js",
     "lint": "eslint src/"
   },
   "author": "axiosleo",
