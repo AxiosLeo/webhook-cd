@@ -199,15 +199,15 @@ async function execSteps(label, scripts, context) {
       } else if (is.array(script)) {
         await _foreach(script, async (line) => {
           printer.yellow(line.name + ': ').println();
-          await _exec(line.run, context.cwd);
+          await _exec(line.run, line.dir ? path.join(context.cwd, line.dir) : context.cwd);
         });
       } else if (is.object(script) && !is.empty(script.run)) {
         if (is.array(script.run)) {
           await _foreach(script.run, async (line) => {
-            await _exec(line, context.cwd);
+            await _exec(line, script.dir ? path.join(context.cwd, script.dir) : context.cwd);
           });
         } else {
-          await _exec(script.run, context.cwd);
+          await _exec(script.run, script.dir ? path.join(context.cwd, script.dir) : context.cwd);
         }
       } else {
         debug.log({ script });
