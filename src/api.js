@@ -64,7 +64,7 @@ root.new('/github/{:team}/{:project}', {
 
         const isValid = await controller.verifySignature(config.github.webhook_secret, signature, rawBody);
         if (!isValid) {
-          error(403, 'Unauthorized');
+          error(403, 'Unauthorized! Please check your github webhook secret.');
         }
       }
       const { team, project } = context.params;
