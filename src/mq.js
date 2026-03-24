@@ -10,6 +10,12 @@ const { printer } = require('@axiosleo/cli-tool');
 let rabbit = null;
 let sub = null;
 
+async function processDeployment(platform, task) {
+  const context = { platform, task, workspace: config.workspace, status: '' };
+  const workflow = new Workflow(flow);
+  await workflow.start(context);
+}
+
 /**
  * 监听 RabbitMQ 队列
  */
@@ -34,15 +40,10 @@ const consumer = async () => {
     // With a "topic" exchange, messages matching this pattern are routed to the queue
     queueBindings: [{ exchange: c.exchange, routingKey: 'webhook.*' }],
   }, async (msg) => {
-    try {
-      const { task, platform } = msg.body;
-      let status = '';
-      const context = { platform, task, workspace: config.workspace, status };
-      const workflow = new Workflow(flow);
-      await workflow.start(context);
-    } catch (err) {
+    const { task, platform } = msg.body;
+    processDeployment(platform, task).catch(err => {
       debug.dump(err);
-    }
+    });
   });
   sub.on('error', (err) => {
     // Maybe the consumer was cancelled, or the connection was reset before a
