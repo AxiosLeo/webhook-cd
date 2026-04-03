@@ -23,11 +23,6 @@ async function init(context) {
   const PlatformHandlerClass = require(`./platform/${platform}`);
   /** @type {import('../index.d.ts').PlatformHandler} */
   const platformHandler = new PlatformHandlerClass();
-  let defaultBranch = await platformHandler.getDefaultBranch(task);
-  if (task.target !== defaultBranch && task.target !== 'refs/heads/' + defaultBranch) {
-    printer.print('目标分支: ').yellow(task.target).println(' 不是默认分支: ' + defaultBranch);
-    return 'end';
-  }
   const cwd = path.join(config.workspace, `./${task.repo}`);
 
   if (!await _exists(config.workspace)) {
@@ -52,7 +47,6 @@ async function init(context) {
   context.deploy = new Deployment(platformHandler, {
     workspace: config.workspace,
     cwd,
-    target: task.target,
     repo: task.repo,
     platform: platform,
     task: task,

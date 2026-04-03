@@ -105,8 +105,11 @@ function _matchesBranchPatterns(branchName, patterns) {
   return patterns.some(pattern => _wildcardMatch(pattern, cleanBranchName));
 }
 
-function _matchesBranch(deployConfig, mergeList) {
+function _matchesBranch(target, deployConfig, mergeList) {
   return mergeList.filter((i) => {
+    if (i.source === target || i.target !== target) {
+      return false;
+    }
     if (deployConfig.on && deployConfig.on.branches) {
       const isIncluded = _matchesBranchPatterns(i.source, deployConfig.on.branches);
 

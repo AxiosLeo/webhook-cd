@@ -52,7 +52,6 @@ class Deployment {
     this.platformHandler = platformHandler;
     this.workspace = options.workspace;
     this.cwd = options.cwd;
-    this.target = options.target;
     this.repo = options.repo;
     this.platform = options.platform;
     this.task = options.task;
@@ -66,7 +65,7 @@ class Deployment {
 
   async resolveJobs() {
     const mergeList = (await this.platformHandler.getMergeRequest(this.task) || []).filter((i) =>
-      !(i.source === i.target || i.source === `${this.target}`)
+      !(i.source === i.target)
     );
     if (!mergeList || !mergeList.length) {
       throw new Error('没有需要部署的分支');
@@ -75,7 +74,7 @@ class Deployment {
       // 多个分支配置
       const jobs = this.deployConfig.jobs;
       jobs.forEach((job) => {
-        const items = _matchesBranch(job, mergeList);
+        const items = _matchesBranch(job.target, job, mergeList);
         if (!items || !items.length) {
           return;
         }
@@ -89,7 +88,7 @@ class Deployment {
         });
       });
     } else {
-      const items = _matchesBranch(this.deployConfig, mergeList);
+      const items = _matchesBranch(this.task.target, this.deployConfig, mergeList);
       if (items && items.length) {
         this.jobs.push({
           target: this.task.target,
@@ -157,7 +156,7 @@ class Deployment {
           }
         });
 
-        // 合并代码后，再读一次 .cd.yml 文件，避免配置文件被修改
+        // 合并代码后，再读一次 .cd.yml 文件，避免配置文件被修改，如果未修改，则与主分支形同
         const ymlConfigFile = path.join(this.cwd, '.cd.yml');
         if (!await _exists(ymlConfigFile)) {
           printer.warning('没有找到 .cd.yml 文件，可能已被删除，请检查文件是否存在');
@@ -168,15 +167,8 @@ class Deployment {
           printer.warning('读取 .cd.yml 文件失败');
           return;
         }
+
         // 合并配置
-        deployConfig = {
-          env: {
-            ...this.deployConfig.env,
-            ...deployConfig.env
-          },
-          ...this.deployConfig,
-          ...deployConfig
-        };
         const env = deployConfig.env || {};
         Object.keys(env).forEach((key) => {
           process.env[key] = env[key];

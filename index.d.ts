@@ -64,9 +64,24 @@ export interface DeployJob {
   deployConfig: DeployConfig;
 }
 
-export type DeploymentOptions = { workspace: string, cwd: string, target: string, repo: string, platform: Platform, task: Task, status: Status, deployConfig: DeployConfig };
+export type DeploymentOptions = {
+  workspace: string,
+  cwd: string,
+  repo: string,
+  platform: Platform,
+  task: Task,
+  status: Status,
+  deployConfig: DeployConfig
+};
 
 export class Deployment {
+  workspace: string;
+  cwd: string;
+  repo: string;
+  platform: Platform;
+  task: Task;
+  status: Status;
+  deployConfig: DeployConfig;
   constructor(platformHandler: PlatformHandler, options: DeploymentOptions);
   resolveJobs(): Promise<DeployJob[]>;
   execJobs(jobs: DeployJob[]): Promise<boolean>;
@@ -78,10 +93,8 @@ export interface Context {
   task: Task;
   workspace: string;
   cwd: string;
-  target: string;
   repo: string;
   platform: Platform;
-  task: Task;
   status: Status;
   deployConfig: DeployConfig;
   deploy: Deployment;
