@@ -34,6 +34,7 @@ async function init(context) {
     await _mkdir(config.workspace);
   }
   printer.print('CWD: ').yellow(cwd).println();
+  context.cwd = cwd;
 
   // 如果仓库目录不存在，则克隆仓库
   if (!await _exists(context.cwd)) {
