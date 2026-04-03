@@ -101,10 +101,7 @@ class Deployment {
     return this.jobs;
   }
 
-  async execJobs(jobs = []) {
-    if (jobs && jobs.length) {
-      this.jobs = jobs;
-    }
+  async execJobs() {
     if (!this.jobs || !this.jobs.length) {
       throw new Error('没有需要部署的任务');
     }
@@ -115,7 +112,8 @@ class Deployment {
         throw new Error('多个 jobs 的 target 不能相同');
       }
     }
-    await _foreach(jobs, async (job) => {
+    let success = true;
+    await _foreach(this.jobs, async (job) => {
       try {
         // 基于 target 分支创建临时分支
         let { target, items, deployConfig } = job;
@@ -128,7 +126,8 @@ class Deployment {
           tmpBranch = `tmp/commit-${await git.commit.id(this.cwd)}`;
         } catch (err) {
           debug.log(err);
-          return false;
+          success = false;
+          return;
         }
         await git.branch.reset(target, this.cwd);
         await git.branch.clear(this.cwd, false);
@@ -154,7 +153,7 @@ class Deployment {
           if (!await git.branch.exist(source, this.cwd)) {
             printer.yellow('分支不存在: ').red(source).println();
             printer.print('Merge ').yellow(`${items.map(i => i.source).join(' | ')}`).println(' branches failed. last branch: ' + last.source);
-            return false;
+            return;
           }
         });
 
@@ -162,12 +161,12 @@ class Deployment {
         const ymlConfigFile = path.join(this.cwd, '.cd.yml');
         if (!await _exists(ymlConfigFile)) {
           printer.warning('没有找到 .cd.yml 文件，可能已被删除，请检查文件是否存在');
-          return false;
+          return;
         }
         deployConfig = await _yaml(ymlConfigFile);
         if (!deployConfig) {
           printer.warning('读取 .cd.yml 文件失败');
-          return false;
+          return;
         }
         // 合并配置
         deployConfig = {
@@ -200,13 +199,14 @@ class Deployment {
         if (!await execSteps('执行清理脚本', cleanup, this.cwd)) {
           throw new Error('执行清理脚本失败');
         }
-        return true;
       } catch (err) {
         debug.log(err);
         printer.print('执行 ').yellow(job.target).print(' 部署操作失败: ').red(err.message).println();
-        return false;
+        success = false;
+        return;
       }
     });
+    return success;
   }
 }
 
