@@ -1,7 +1,7 @@
 # Webhook-CD 配置文件示例
 # 已支持的特性：
 
-name: webhook-cd-deployment-matrix
+name: webhook-cd-deployment-jobs
 
 # 环境变量配置
 env:
@@ -12,9 +12,9 @@ env:
 jobs:
   - on:
       # 多个 Job 的目标分支不能重复
-      target: develop
       branches:
         - features/some-change
+    target: develop
     deploy:
       steps:
         - name: 代码检查
@@ -40,9 +40,9 @@ jobs:
           # - docker system prune -f
           # - npm cache clean --force
   - on:
-      target: master
       branches:
         - features/some-other-change
+    target: master
     deploy:
       steps:
         - name: 代码检查
