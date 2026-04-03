@@ -65,7 +65,7 @@ class Deployment {
   }
 
   async resolveJobs() {
-    const mergeList = (await this.platformHandler.getMergeRequest(this.task) || []).mergeList.filter((i) =>
+    const mergeList = (await this.platformHandler.getMergeRequest(this.task) || []).filter((i) =>
       !(i.source === i.target || i.source === `${this.target}`)
     );
     if (!mergeList || !mergeList.length) {
