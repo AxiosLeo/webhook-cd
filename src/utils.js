@@ -72,9 +72,63 @@ async function _yaml(file) {
   return null;
 }
 
+/**
+ * 通配符匹配函数
+ * @param {string} pattern - 模式字符串，支持 * 通配符
+ * @param {string} str - 要匹配的字符串
+ * @returns {boolean} 是否匹配
+ */
+function _wildcardMatch(pattern, str) {
+  // 将通配符模式转换为正则表达式
+  const regexPattern = pattern
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // 转义特殊字符
+    .replace(/\\\*/g, '.*'); // 将 \* 替换为 .*
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(str);
+}
+
+/**
+ * 判断分支是否匹配分支模式列表
+ * @param {string} branchName - 分支名称
+ * @param {string[]} patterns - 分支模式列表
+ * @returns {boolean} 是否匹配
+ */
+function _matchesBranchPatterns(branchName, patterns) {
+  if (!patterns || !Array.isArray(patterns)) {
+    return false;
+  }
+
+  // 移除 refs/heads/ 前缀（如果存在）
+  const cleanBranchName = branchName.replace(/^refs\/heads\//, '');
+
+  return patterns.some(pattern => _wildcardMatch(pattern, cleanBranchName));
+}
+
+function _matchesBranch(target, deployConfig, mergeList) {
+  return mergeList.filter((i) => {
+    if (i.source === target || i.target !== target) {
+      return false;
+    }
+    if (deployConfig.on && deployConfig.on.branches) {
+      const isIncluded = _matchesBranchPatterns(i.source, deployConfig.on.branches);
+
+      // 检查是否在排除列表中
+      if (deployConfig.on.exclude_branches) {
+        const isExcluded = _matchesBranchPatterns(i.source, deployConfig.on.exclude_branches);
+        return isIncluded && !isExcluded;
+      }
+
+      return isIncluded;
+    }
+    return true;
+  });
+}
+
 module.exports = {
   _db,
   _yaml,
   _merge,
-  _table
+  _table,
+  _matchesBranch
 };

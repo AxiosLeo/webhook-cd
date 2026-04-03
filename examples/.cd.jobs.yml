@@ -1,0 +1,69 @@
+# Webhook-CD 配置文件示例
+# 已支持的特性：
+
+name: webhook-cd-deployment-jobs
+
+# 环境变量配置
+env:
+  # 全局环境变量
+  DEPLOY_ENV: develop
+
+# 分支配置 - 监听这些分支的合并请求，非必须
+jobs:
+  - on:
+      # 多个 Job 的目标分支不能重复
+      branches:
+        - features/some-change
+    target: develop
+    deploy:
+      steps:
+        - name: 代码检查
+          run:
+            - echo "检查完成"
+        - name: 构建项目
+          run:
+            - echo "构建完成"
+    scripts:
+      pre_deploy:
+        - echo "开始部署前检查..."
+        - docker --version
+        - node --version
+        - npm --version
+
+      post_deploy:
+        - echo "部署完成，执行后续任务..."
+        - pm2 status
+        - df -h
+
+      cleanup:
+        - echo "执行清理任务..."
+          # - docker system prune -f
+          # - npm cache clean --force
+  - on:
+      branches:
+        - features/some-other-change
+    target: master
+    deploy:
+      steps:
+        - name: 代码检查
+          run:
+            - echo "检查完成"
+        - name: 构建项目
+          run:
+            - echo "构建完成"
+    scripts:
+      pre_deploy:
+        - echo "开始部署前检查..."
+        - docker --version
+        - node --version
+        - npm --version
+
+      post_deploy:
+        - echo "部署完成，执行后续任务..."
+        - pm2 status
+        - df -h
+
+      cleanup:
+        - echo "执行清理任务..."
+        # - docker system prune -f
+        # - npm cache clean --force
